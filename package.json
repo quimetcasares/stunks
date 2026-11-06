@@ -22,12 +22,14 @@
     "db:iniciar": "supabase start -x studio,imgproxy,postgres-meta,edge-runtime,logflare,vector,supavisor",
     "db:parar": "supabase stop",
     "db:reiniciar": "supabase db reset",
-    "db:probar": "supabase test db && supabase db lint --fail-on warning"
+    "db:probar": "supabase test db && supabase db lint --fail-on warning",
+    "db:tipos": "supabase gen types typescript --schema public > src/cuenta/tipos-db.ts && biome format --write src/cuenta/tipos-db.ts"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "lightweight-charts": "^5.2.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

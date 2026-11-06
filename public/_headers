@@ -1,7 +1,8 @@
 # Encabezados de seguridad para Cloudflare Pages.
-# connect-src: la web publicada solo pide datos a sí misma; no llama a ningún exchange (docs/decisiones/0006-web-sin-datos-reales.md).
+# connect-src: la web publicada solo habla consigo misma y con el Supabase de Stunks (cuentas, docs/decisiones/0008-cuentas.md);
+# no llama a ningún exchange (docs/decisiones/0006-web-sin-datos-reales.md).
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://mqzgmccfykqkkxyunssp.supabase.co wss://mqzgmccfykqkkxyunssp.supabase.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
