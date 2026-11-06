@@ -8,7 +8,7 @@ Thumbs.db
 .env.*
 .wrangler/
 ABRIR-prueba-fase0.html
-practica/
+/practica/
 __pycache__/
 e2e/.datos/
 playwright-report/
