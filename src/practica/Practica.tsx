@@ -450,7 +450,16 @@ export function Practica() {
       <div className="p-barra">
         <div className="p-simbolo">
           <span className="p-ticker">{NQ.micro}</span>
-          <span className="muted">Micro Nasdaq 100</span>
+          {WEB ? (
+            <>
+              <span className="p-demo" data-testid="demo">
+                Datos de ejemplo
+              </span>
+              <span className="muted">Precios inventados; el NQ llega con las cuentas</span>
+            </>
+          ) : (
+            <span className="muted">Micro Nasdaq 100</span>
+          )}
         </div>
         <span className="p-sep" aria-hidden="true" />
         <label className="p-campo">
@@ -585,11 +594,6 @@ export function Practica() {
                 </>
               ) : (
                 <span className="muted">Sin sesión</span>
-              )}
-              {WEB && (
-                <span className="p-demo" data-testid="demo">
-                  Datos de ejemplo (mercado de mentira). El NQ llega con las cuentas.
-                </span>
               )}
               {aviso && <span className="p-aviso">{aviso}</span>}
             </div>

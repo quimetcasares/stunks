@@ -415,9 +415,16 @@ input[type="number"] {
   color: var(--accent);
 }
 
+/* Etiqueta de la web publicada: los precios son del mercado de mentira (docs/decisiones/0006) */
 .p-demo {
-  color: var(--muted);
-  font-size: 12px;
+  align-self: center;
+  padding: 1px 6px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .p-lado {
