@@ -18,6 +18,19 @@ const datosLocales = (): Plugin => ({
   },
 })
 
+// Los avisos son páginas sueltas (public/privacidad.html, public/grabacion.html). Cloudflare Pages y
+// `vite preview` las sirven sin el .html; en desarrollo se hace lo mismo para que los enlaces funcionen igual.
+const paginasSueltas = (): Plugin => ({
+  name: 'paginas-sueltas',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      const m = req.url?.match(/^\/(privacidad|grabacion)\/?(\?.*)?$/)
+      if (m) req.url = `/${m[1]}.html${m[2] ?? ''}`
+      next()
+    })
+  },
+})
+
 // Formas de construir:
 //  - normal (`npm run build`): dist/ para Cloudflare Pages.
 //  - practica (`npm run build:practica`): practica/app/, para abrirla en local con practicar.bat.
@@ -26,7 +39,7 @@ export default defineConfig(({ mode }) => {
   const archivo = mode === 'archivo'
   const practica = mode === 'practica'
   return {
-    plugins: archivo ? [react(), viteSingleFile()] : [react(), datosLocales()],
+    plugins: archivo ? [react(), viteSingleFile()] : [react(), datosLocales(), paginasSueltas()],
     base: archivo || practica ? './' : '/',
     build: {
       outDir: archivo ? 'dist-archivo' : practica ? 'practica/app' : 'dist',

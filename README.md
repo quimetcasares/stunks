@@ -78,6 +78,8 @@ docs/decisiones/     decisiones de arquitectura y de datos
 
 Stunks nunca guarda ni sirve datos de mercado: los datos de cripto los pide el navegador de cada usuario y los del NQ se quedan en local. La web publicada usa un mercado de mentira (ver [decisión 0006](docs/decisiones/0006-web-sin-datos-reales.md)). Detalle de términos en [docs/terminos-datos.md](docs/terminos-datos.md).
 
+Qué datos guarda Stunks con las cuentas y qué se graba de la práctica: [aviso de privacidad](https://stunks.app/privacidad) y [aviso de grabación](https://stunks.app/grabacion) ([decisión 0009](docs/decisiones/0009-avisos.md)). Contacto: contacto@stunks.app.
+
 Simulador educativo. No es asesoría de inversión ni da señales. Los resultados simulados no garantizan resultados reales.
 
 Gráficas con [Lightweight Charts](https://www.tradingview.com/lightweight-charts/) de TradingView.

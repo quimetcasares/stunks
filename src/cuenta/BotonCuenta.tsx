@@ -2,6 +2,7 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { sugerirApodo } from './apodo'
+import { type Documento, enlaceAviso } from './avisos'
 import { Dialogo } from './Dialogo'
 import { botonPropioDeGoogle, pintarBotonGoogle } from './google'
 import { type ClaveError, claveDeError, useCuenta } from './sesion'
@@ -12,11 +13,13 @@ export function BotonCuenta() {
   const cuenta = useCuenta()
   const [abierto, setAbierto] = useState(false)
   const sinApodo = !!cuenta.sesion && !!cuenta.perfil && !cuenta.perfil.apodo
+  const faltanAvisos = !!cuenta.sesion && !!cuenta.avisosPendientes?.length
+  const pendiente = sinApodo || faltanAvisos
 
-  // Al entrar por primera vez se pide el apodo.
+  // Al entrar por primera vez, o si cambió algún aviso, se pide el apodo y aceptar los avisos.
   useEffect(() => {
-    if (sinApodo) setAbierto(true)
-  }, [sinApodo])
+    if (pendiente) setAbierto(true)
+  }, [pendiente])
 
   if (!cuenta.disponible || !cuenta.listo) return null
 
@@ -35,7 +38,7 @@ export function BotonCuenta() {
         <Dialogo
           abierto={abierto}
           alCerrar={() => setAbierto(false)}
-          titulo={sinApodo ? t.c.bienvenidaTitulo : t.c.miCuenta}
+          titulo={sinApodo ? t.c.bienvenidaTitulo : faltanAvisos ? t.c.avisosTitulo : t.c.miCuenta}
           testid="dialogo-cuenta"
         >
           <MiCuenta bienvenida={sinApodo} alSalir={() => setAbierto(false)} />
@@ -60,7 +63,7 @@ function Aviso({ clave }: { clave: ClaveError | null }) {
 }
 
 function Entrar() {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const cuenta = useCuenta()
   const [correo, setCorreo] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -133,12 +136,20 @@ function Entrar() {
       )}
       <Aviso clave={error} />
       {metodos && <p className="muted chico">{metodos.google ? t.c.sinContrasenas : t.c.sinContrasenasCorreo}</p>}
+      <p className="chico enlaces-legales">
+        <a href={enlaceAviso('privacidad', lang)} target="_blank" rel="noreferrer">
+          {t.legalTitulo.privacidad}
+        </a>
+        <a href={enlaceAviso('grabacion', lang)} target="_blank" rel="noreferrer">
+          {t.legalTitulo.grabacion}
+        </a>
+      </p>
     </div>
   )
 }
 
 function MiCuenta({ bienvenida, alSalir }: { bienvenida: boolean; alSalir: () => void }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const cuenta = useCuenta()
   const correo = cuenta.sesion?.user.email ?? ''
   const nombre = (cuenta.sesion?.user.user_metadata?.full_name as string | undefined) ?? correo
@@ -148,13 +159,17 @@ function MiCuenta({ bienvenida, alSalir }: { bienvenida: boolean; alSalir: () =>
   const [error, setError] = useState<ClaveError | null>(null)
   const [confirmarBorrar, setConfirmarBorrar] = useState(false)
 
+  const faltan = cuenta.avisosPendientes ?? []
+  const [aceptados, setAceptados] = useState<Partial<Record<Documento, boolean>>>({})
+
   async function guardar(ev: FormEvent) {
     ev.preventDefault()
     setError(null)
     setGuardado(false)
     setGuardando(true)
     try {
-      await cuenta.guardarApodo(apodo.trim())
+      if (apodo.trim() !== cuenta.perfil?.apodo) await cuenta.guardarApodo(apodo.trim())
+      if (faltan.length) await cuenta.aceptarAvisos()
       setGuardado(true)
     } catch (e) {
       setError(claveDeError(e))
@@ -201,8 +216,30 @@ function MiCuenta({ bienvenida, alSalir }: { bienvenida: boolean; alSalir: () =>
           />
           <small className="muted">{t.c.apodoAyuda}</small>
         </label>
+        {faltan.length > 0 && (
+          <fieldset className="avisos">
+            <legend className="muted">{t.c.avisosIntro}</legend>
+            {faltan.map((d) => (
+              <label key={d} className="p-check aviso-check">
+                <input
+                  type="checkbox"
+                  required
+                  checked={!!aceptados[d]}
+                  onChange={(e) => setAceptados((a) => ({ ...a, [d]: e.target.checked }))}
+                  data-testid={`acepto-${d}`}
+                />
+                <span>
+                  {t.c.acepto[d]}{' '}
+                  <a href={enlaceAviso(d, lang)} target="_blank" rel="noreferrer">
+                    {t.legal[d]}
+                  </a>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
         <button type="submit" className="btn primary ancho alto" disabled={guardando} data-testid="guardar-apodo">
-          {t.c.guardar}
+          {faltan.length ? t.c.listo : t.c.guardar}
         </button>
         {guardado && (
           <p className="aviso-ok" role="status">
@@ -212,45 +249,41 @@ function MiCuenta({ bienvenida, alSalir }: { bienvenida: boolean; alSalir: () =>
       </form>
       <Aviso clave={error} />
 
-      {!bienvenida && (
-        <>
+      <button
+        type="button"
+        className="btn ghost ancho alto"
+        onClick={async () => {
+          await cuenta.salir()
+          alSalir()
+        }}
+        data-testid="salir"
+      >
+        {t.c.salir}
+      </button>
+
+      <section className="zona-peligro" aria-label={t.c.borrarTitulo}>
+        <strong>{t.c.borrarTitulo}</strong>
+        <p className="muted">{t.c.borrarAviso}</p>
+        {confirmarBorrar ? (
+          <div className="fila-botones">
+            <button type="button" className="btn ghost" onClick={() => setConfirmarBorrar(false)}>
+              {t.c.cancelar}
+            </button>
+            <button type="button" className="btn peligro" onClick={borrar} data-testid="confirmar-borrar">
+              {t.c.borrarConfirmar}
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
-            className="btn ghost ancho alto"
-            onClick={async () => {
-              await cuenta.salir()
-              alSalir()
-            }}
-            data-testid="salir"
+            className="btn ghost peligro-suave"
+            onClick={() => setConfirmarBorrar(true)}
+            data-testid="borrar-cuenta"
           >
-            {t.c.salir}
+            {t.c.borrar}
           </button>
-
-          <section className="zona-peligro" aria-label={t.c.borrarTitulo}>
-            <strong>{t.c.borrarTitulo}</strong>
-            <p className="muted">{t.c.borrarAviso}</p>
-            {confirmarBorrar ? (
-              <div className="fila-botones">
-                <button type="button" className="btn ghost" onClick={() => setConfirmarBorrar(false)}>
-                  {t.c.cancelar}
-                </button>
-                <button type="button" className="btn peligro" onClick={borrar} data-testid="confirmar-borrar">
-                  {t.c.borrarConfirmar}
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="btn ghost peligro-suave"
-                onClick={() => setConfirmarBorrar(true)}
-                data-testid="borrar-cuenta"
-              >
-                {t.c.borrar}
-              </button>
-            )}
-          </section>
-        </>
-      )}
+        )}
+      </section>
     </div>
   )
 }

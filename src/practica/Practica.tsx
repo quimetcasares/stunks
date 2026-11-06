@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { WEB } from '../config'
+import { enlaceAviso } from '../cuenta/avisos'
 import { type ClaveAviso, useI18n } from '../i18n'
 import { type Dia, ErrorDatos, fechaTexto, horaNY, type MesInfo, segundosDesdeReapertura } from './datos'
 import { cargarManifiesto, cargarMes } from './fuente'
@@ -749,7 +750,9 @@ export function Practica() {
             )}
           </div>
 
-          <p className="p-ayuda">{tp.help}</p>
+          <p className="p-ayuda">
+            {tp.help} <a href={enlaceAviso('privacidad', lang)}>{t.legalTitulo.privacidad}</a>
+          </p>
         </aside>
       </div>
     </section>

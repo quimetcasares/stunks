@@ -3,6 +3,7 @@ import type { AuthError, PostgrestError, Session } from '@supabase/supabase-js'
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../i18n'
 import { apodoValido } from './apodo'
+import { AVISOS, avisosPendientes, type Documento } from './avisos'
 import { supabase } from './supabase'
 
 export type ClaveError = 'apodoInvalido' | 'apodoTomado' | 'correoInvalido' | 'correoNoAutorizado' | 'limite' | 'red' | 'otro'
@@ -44,10 +45,13 @@ interface Cuenta {
   sesion: Session | null
   perfil: Perfil | null
   esAdmin: boolean
+  /** Avisos vigentes que faltan por aceptar; null mientras se revisa. */
+  avisosPendientes: Documento[] | null
   entrarConGoogle: () => Promise<void>
   entrarConTokenDeGoogle: (token: string, nonce: string) => Promise<void>
   mandarLink: (correo: string) => Promise<void>
   guardarApodo: (apodo: string) => Promise<void>
+  aceptarAvisos: () => Promise<void>
   salir: () => Promise<void>
   borrarCuenta: () => Promise<void>
 }
@@ -62,10 +66,12 @@ const SIN_CUENTAS: Cuenta = {
   sesion: null,
   perfil: null,
   esAdmin: false,
+  avisosPendientes: null,
   entrarConGoogle: sinCuentas,
   entrarConTokenDeGoogle: sinCuentas,
   mandarLink: sinCuentas,
   guardarApodo: sinCuentas,
+  aceptarAvisos: sinCuentas,
   salir: sinCuentas,
   borrarCuenta: sinCuentas,
 }
@@ -83,6 +89,7 @@ export function CuentaProvider({ children }: { children: ReactNode }) {
   const [sesion, setSesion] = useState<Session | null>(null)
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [esAdmin, setEsAdmin] = useState(false)
+  const [pendientes, setPendientes] = useState<Documento[] | null>(null)
   const usuarioId = sesion?.user.id ?? null
 
   useEffect(() => {
@@ -105,16 +112,19 @@ export function CuentaProvider({ children }: { children: ReactNode }) {
     if (!supabase || !usuarioId) {
       setPerfil(null)
       setEsAdmin(false)
+      setPendientes(null)
       return
     }
     let vivo = true
     Promise.all([
       supabase.from('perfiles').select('apodo, idioma').eq('id', usuarioId).maybeSingle(),
       supabase.from('administradores').select('usuario_id').eq('usuario_id', usuarioId).maybeSingle(),
-    ]).then(([p, a]) => {
+      supabase.from('consentimientos').select('documento, version').eq('usuario_id', usuarioId),
+    ]).then(([p, a, c]) => {
       if (!vivo) return
       setPerfil(p.data ?? null)
       setEsAdmin(!!a.data)
+      setPendientes(c.error ? null : avisosPendientes(c.data))
     })
     return () => {
       vivo = false
@@ -142,6 +152,7 @@ export function CuentaProvider({ children }: { children: ReactNode }) {
       sesion,
       perfil,
       esAdmin,
+      avisosPendientes: pendientes,
       async entrarConGoogle() {
         const { error } = await cliente.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: aqui() } })
         if (error) throw traducir(error)
@@ -164,6 +175,15 @@ export function CuentaProvider({ children }: { children: ReactNode }) {
         if (error) throw traducir(error)
         setPerfil((p) => (p ? { ...p, apodo } : { apodo, idioma: lang }))
       },
+      async aceptarAvisos() {
+        const faltan = pendientes ?? (Object.keys(AVISOS) as Documento[])
+        if (!faltan.length) return
+        const { error } = await cliente
+          .from('consentimientos')
+          .insert(faltan.map((documento) => ({ documento, version: AVISOS[documento] })))
+        if (error) throw traducir(error)
+        setPendientes([])
+      },
       async salir() {
         await cliente.auth.signOut({ scope: 'local' })
       },
@@ -174,7 +194,7 @@ export function CuentaProvider({ children }: { children: ReactNode }) {
         await cliente.auth.signOut({ scope: 'local' })
       },
     }
-  }, [listo, sesion, perfil, esAdmin, usuarioId, lang])
+  }, [listo, sesion, perfil, esAdmin, pendientes, usuarioId, lang])
 
   return <CuentaContext.Provider value={cuenta}>{children}</CuentaContext.Provider>
 }

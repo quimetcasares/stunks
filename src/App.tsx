@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Logo } from './components/Logo'
 import { TechTest } from './components/TechTest'
 import { APP, WEB } from './config'
+import { enlaceAviso } from './cuenta/avisos'
 import { BotonCuenta } from './cuenta/BotonCuenta'
 import { CuentaProvider } from './cuenta/sesion'
 import { DICTS, type Lang, LangContext, loadLang, saveLang } from './i18n'
@@ -104,6 +105,11 @@ export default function App() {
           </section>
           <footer className="foot">
             <p>{t.disclaimer}</p>
+            <p className="enlaces-legales">
+              <a href={enlaceAviso('privacidad', lang)}>{t.legalTitulo.privacidad}</a>
+              <a href={enlaceAviso('grabacion', lang)}>{t.legalTitulo.grabacion}</a>
+              <a href="mailto:contacto@stunks.app">{t.contacto}: contacto@stunks.app</a>
+            </p>
             <p className="muted">
               {t.chartsWith[0]}
               <a href="https://www.tradingview.com/lightweight-charts/">Lightweight Charts</a>

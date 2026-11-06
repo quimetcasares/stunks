@@ -905,6 +905,32 @@ th {
 .btn.alto {
   min-height: 38px;
 }
+.avisos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.avisos legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.aviso-check {
+  align-items: flex-start;
+  line-height: 1.4;
+}
+.aviso-check input {
+  margin-top: 2px;
+  flex: none;
+}
+.enlaces-legales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
 .google-caja {
   display: flex;
   justify-content: center;

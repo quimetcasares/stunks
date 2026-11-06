@@ -49,12 +49,22 @@ test('entra con el link del correo, elige apodo, sigue adentro al recargar y bor
   await page.goto(await linkDelCorreo(correo))
   await expect(page.getByTestId('dialogo-cuenta')).toBeVisible()
   await page.getByTestId('apodo').fill(apodo)
+
+  // Sin aceptar los dos avisos no se guarda nada.
+  await page.getByTestId('guardar-apodo').click()
+  expect(await page.getByTestId('acepto-privacidad').evaluate((el) => (el as HTMLInputElement).checkValidity())).toBe(false)
+  await expect(page.getByTestId('cuenta')).not.toHaveText(apodo)
+
+  await page.getByTestId('acepto-privacidad').check()
+  await page.getByTestId('acepto-grabacion').check()
   await page.getByTestId('guardar-apodo').click()
   await expect(page.getByTestId('cuenta')).toHaveText(apodo)
   await page.keyboard.press('Escape')
 
+  // Al volver ya no pide nada: apodo y avisos quedaron guardados.
   await page.reload()
   await expect(page.getByTestId('cuenta')).toHaveText(apodo)
+  await expect(page.getByTestId('dialogo-cuenta')).not.toBeVisible()
 
   await page.getByTestId('cuenta').click()
   await page.getByTestId('borrar-cuenta').click()
