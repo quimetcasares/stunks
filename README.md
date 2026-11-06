@@ -4,7 +4,7 @@ Simulador de trading con replay. Caes en cualquier fecha y hora, lo corres de 1x
 
 Gratis y de código abierto (AGPL-3.0). Versión actual: **0.1.0**. Plan de trabajo: [docs/roadmap.md](docs/roadmap.md).
 
-En línea: https://stunks.pages.dev (con un mercado de mentira; el NQ llega con las cuentas).
+En línea: https://stunks.app (con un mercado de mentira; el NQ llega con las cuentas).
 
 ## Qué hace hoy
 
@@ -46,6 +46,12 @@ Atajos: Espacio play/pausa · → una vela · C comprar · V vender · X cerrar.
 | `npm run db:probar`      | Pruebas de reglas por fila (pgTAP) y lint de la base                            |
 | `npm run db:reiniciar`   | Borra la base local y vuelve a aplicar las migraciones                          |
 | `npm run db:parar`       | Apaga el Supabase local                                                         |
+
+### Base de datos
+
+Cuentas, chat y acceso al NQ viven en Supabase ([decisión 0008](docs/decisiones/0008-cuentas.md)). En local, `npm run db:iniciar` levanta un Supabase con Docker y aplica las migraciones de `supabase/migrations/`; `npm run db:probar` corre las pruebas de reglas por fila.
+
+Producción solo cambia con migraciones: en cada PR que toca `supabase/migrations/`, el workflow `Migraciones` muestra qué se aplicaría, y al fusionar en `main` las aplica. Nada se cambia a mano en la base de producción.
 
 ## Estructura
 

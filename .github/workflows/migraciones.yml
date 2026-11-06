@@ -1,0 +1,51 @@
+name: Migraciones
+
+# Los cambios a la base de producción solo entran por aquí (docs/decisiones/0008-cuentas.md).
+# En un PR: simulación (qué migraciones se aplicarían). Al fusionar en main: se aplican.
+on:
+  pull_request:
+    paths:
+      - supabase/migrations/**
+      - .github/workflows/migraciones.yml
+  push:
+    branches: [main]
+    paths:
+      - supabase/migrations/**
+      - .github/workflows/migraciones.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Nunca dos a la vez contra producción, y ninguna se cancela a medias.
+concurrency:
+  group: migraciones-produccion
+  cancel-in-progress: false
+
+jobs:
+  produccion:
+    name: Migraciones de producción
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # Cadena del Session pooler (IPv4). Los PRs desde forks no la reciben.
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Sin acceso a producción
+        if: env.SUPABASE_DB_URL == ''
+        run: echo "Este PR no tiene acceso a la base de producción; se revisa al fusionar."
+      - uses: actions/checkout@v7
+        if: env.SUPABASE_DB_URL != ''
+      - uses: actions/setup-node@v7
+        if: env.SUPABASE_DB_URL != ''
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        if: env.SUPABASE_DB_URL != ''
+      - name: Qué se aplicaría
+        if: env.SUPABASE_DB_URL != ''
+        run: npx supabase db push --remote="$SUPABASE_DB_URL" --dry-run
+      - name: Aplicar a producción
+        if: env.SUPABASE_DB_URL != '' && github.event_name != 'pull_request'
+        run: npx supabase db push --remote="$SUPABASE_DB_URL" --yes
