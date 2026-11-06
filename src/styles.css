@@ -905,6 +905,11 @@ th {
 .btn.alto {
   min-height: 38px;
 }
+.google-caja {
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+}
 .separador {
   display: flex;
   align-items: center;

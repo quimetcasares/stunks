@@ -1,8 +1,9 @@
 // Botón de la barra de arriba: "Entrar" sin sesión, o el apodo con sesión.
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { sugerirApodo } from './apodo'
 import { Dialogo } from './Dialogo'
+import { botonPropioDeGoogle, pintarBotonGoogle } from './google'
 import { type ClaveError, claveDeError, useCuenta } from './sesion'
 import { type Metodos, metodosDeEntrada } from './supabase'
 
@@ -76,15 +77,6 @@ function Entrar() {
     }
   }, [])
 
-  async function google() {
-    setError(null)
-    try {
-      await cuenta.entrarConGoogle()
-    } catch (e) {
-      setError(claveDeError(e))
-    }
-  }
-
   async function mandar(ev: FormEvent) {
     ev.preventDefault()
     setError(null)
@@ -103,11 +95,7 @@ function Entrar() {
     <div className="dialogo-cuerpo">
       <p className="muted">{t.c.entrarIntro}</p>
       {!metodos && <p className="muted">{t.p.loading}</p>}
-      {metodos?.google && (
-        <button type="button" className="btn primary ancho alto" onClick={google} data-testid="google">
-          {t.c.google}
-        </button>
-      )}
+      {metodos?.google && <BotonGoogle alError={setError} />}
       {metodos?.google && metodos.correo && (
         <div className="separador" aria-hidden="true">
           <span>{t.c.o}</span>
@@ -264,5 +252,41 @@ function MiCuenta({ bienvenida, alSalir }: { bienvenida: boolean; alSalir: () =>
         </>
       )}
     </div>
+  )
+}
+
+/**
+ * En stunks.app, el botón propio de Google (Google muestra "stunks.app"). En las vistas previas, o si el
+ * script de Google no carga, el botón de la app con redirección por Supabase.
+ */
+function BotonGoogle({ alError }: { alError: (clave: ClaveError | null) => void }) {
+  const { t, lang } = useI18n()
+  const cuenta = useCuenta()
+  const caja = useRef<HTMLDivElement>(null)
+  const [propio, setPropio] = useState(botonPropioDeGoogle)
+  const alElegir = useRef(cuenta.entrarConTokenDeGoogle)
+  alElegir.current = cuenta.entrarConTokenDeGoogle
+
+  useEffect(() => {
+    if (!propio || !caja.current) return
+    pintarBotonGoogle(caja.current, lang, (token, nonce) => {
+      alError(null)
+      alElegir.current(token, nonce).catch((e) => alError(claveDeError(e)))
+    }).catch(() => setPropio(false))
+  }, [propio, lang, alError])
+
+  if (propio) return <div ref={caja} className="google-caja" data-testid="google" />
+  return (
+    <button
+      type="button"
+      className="btn primary ancho alto"
+      onClick={() => {
+        alError(null)
+        cuenta.entrarConGoogle().catch((e) => alError(claveDeError(e)))
+      }}
+      data-testid="google"
+    >
+      {t.c.google}
+    </button>
   )
 }

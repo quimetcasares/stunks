@@ -45,6 +45,7 @@ interface Cuenta {
   perfil: Perfil | null
   esAdmin: boolean
   entrarConGoogle: () => Promise<void>
+  entrarConTokenDeGoogle: (token: string, nonce: string) => Promise<void>
   mandarLink: (correo: string) => Promise<void>
   guardarApodo: (apodo: string) => Promise<void>
   salir: () => Promise<void>
@@ -62,6 +63,7 @@ const SIN_CUENTAS: Cuenta = {
   perfil: null,
   esAdmin: false,
   entrarConGoogle: sinCuentas,
+  entrarConTokenDeGoogle: sinCuentas,
   mandarLink: sinCuentas,
   guardarApodo: sinCuentas,
   salir: sinCuentas,
@@ -142,6 +144,10 @@ export function CuentaProvider({ children }: { children: ReactNode }) {
       esAdmin,
       async entrarConGoogle() {
         const { error } = await cliente.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: aqui() } })
+        if (error) throw traducir(error)
+      },
+      async entrarConTokenDeGoogle(token: string, nonce: string) {
+        const { error } = await cliente.auth.signInWithIdToken({ provider: 'google', token, nonce })
         if (error) throw traducir(error)
       },
       async mandarLink(correo: string) {

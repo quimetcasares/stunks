@@ -1,8 +1,9 @@
 # Encabezados de seguridad para Cloudflare Pages.
 # connect-src: la web publicada solo habla consigo misma y con el Supabase de Stunks (cuentas, docs/decisiones/0008-cuentas.md);
 # no llama a ningún exchange (docs/decisiones/0006-web-sin-datos-reales.md).
+# accounts.google.com/gsi: el botón de Google en stunks.app; el script solo se carga al abrir la ventana de entrar.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://mqzgmccfykqkkxyunssp.supabase.co wss://mqzgmccfykqkkxyunssp.supabase.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data:; font-src 'self'; connect-src 'self' https://mqzgmccfykqkkxyunssp.supabase.co wss://mqzgmccfykqkkxyunssp.supabase.co https://accounts.google.com/gsi/; worker-src 'self' blob:; frame-src https://accounts.google.com/gsi/; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
