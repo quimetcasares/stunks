@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { WEB } from '../config'
-import { type Dia, fechaTexto, horaNY, type MesInfo, segundosDesdeReapertura } from './datos'
+import { type ClaveAviso, useI18n } from '../i18n'
+import { type Dia, ErrorDatos, fechaTexto, horaNY, type MesInfo, segundosDesdeReapertura } from './datos'
 import { cargarManifiesto, cargarMes } from './fuente'
 import { Graficas, type Marca } from './graficas'
 import { NQ, type Resultado, resolver, velaDeCierre } from './motor'
@@ -36,6 +37,11 @@ interface Jugada {
   ciegas: boolean
   res: Resultado
   contra: Resultado
+}
+
+interface Aviso {
+  clave: ClaveAviso
+  dato?: string
 }
 
 interface Registro {
@@ -81,9 +87,9 @@ const signo = (x: number, d = 2) => {
   return `${v > 0 ? '+' : ''}${fmt(v, d)}`
 }
 const tono = (x: number) => (x > 0 ? 'up' : x < 0 ? 'down' : '')
-const fechaLarga = (f: number) => {
+const fechaLarga = (f: number, locale: string) => {
   const s = String(f)
-  return new Date(Date.UTC(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8))).toLocaleDateString('es-MX', {
+  return new Date(Date.UTC(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8))).toLocaleDateString(locale, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -91,6 +97,9 @@ const fechaLarga = (f: number) => {
     timeZone: 'UTC',
   })
 }
+
+const comoAviso = (e: unknown): Aviso =>
+  e instanceof ErrorDatos ? { clave: e.clave, dato: e.dato } : { clave: 'otro', dato: e instanceof Error ? e.message : String(e) }
 
 function resumen(lista: { R: number; usd: number; contraR: number }[]) {
   const n = lista.length
@@ -105,8 +114,10 @@ function resumen(lista: { R: number; usd: number; contraR: number }[]) {
 }
 
 export function Practica() {
+  const { t, lang } = useI18n()
+  const tp = t.p
   const [meses, setMeses] = useState<MesInfo[]>([])
-  const [aviso, setAviso] = useState<string | null>(null)
+  const [aviso, setAviso] = useState<Aviso | null>(null)
   const [cargando, setCargando] = useState(false)
 
   const cfg0 = leer('stunks.cfg', { inicio: 'reapertura' as Inicio, hora: '18:00', desde: 2018, ciegas: false })
@@ -141,8 +152,10 @@ export function Practica() {
   const jugadasRef = useRef<Jugada[]>([])
   const baseRef = useRef(0)
   const ciegasRef = useRef(ciegas)
+  const tRef = useRef(t)
 
   velRef.current = vel
+  tRef.current = t
   ciegasRef.current = ciegas && !revelada
 
   useEffect(() => guardar('stunks.cfg', { inicio, hora, desde, ciegas }), [inicio, hora, desde, ciegas])
@@ -182,19 +195,33 @@ export function Practica() {
         setMeses(m)
         if (m.length) setFecha(`${m[m.length - 1].m}-01`)
       })
-      .catch((e: Error) => setAviso(e.message))
+      .catch((e: unknown) => setAviso(comoAviso(e)))
   }, [])
 
   const marcasDelDia = (lista: Jugada[], p: Posicion | null, D: Dia): Marca[] => {
     const out: Marca[] = []
     for (const j of lista) {
       if (j.fecha !== D.fecha) continue
-      out.push({ vela: j.res.e, tipo: 'entrada', lado: j.res.lado, texto: j.res.lado > 0 ? 'C' : 'V' })
+      out.push({ vela: j.res.e, tipo: 'entrada', lado: j.res.lado, texto: letra(j.res.lado) })
       out.push({ vela: j.res.js, tipo: 'salida', lado: j.res.lado, texto: `${signo(j.res.R, 1)}R` })
     }
-    if (p) out.push({ vela: p.e, tipo: 'entrada', lado: p.lado, texto: p.lado > 0 ? 'C' : 'V' })
+    if (p) out.push({ vela: p.e, tipo: 'entrada', lado: p.lado, texto: letra(p.lado) })
     return out
   }
+  const letra = (lado: 1 | -1) => (lado > 0 ? tRef.current.p.markBuy : tRef.current.p.markSell)
+
+  // al cambiar de idioma se vuelven a dibujar los textos dentro de las gráficas
+  // biome-ignore lint/correctness/useExhaustiveDependencies: todo se lee de refs; lang solo dispara el redibujo
+  useEffect(() => {
+    const g = graf.current
+    if (!g) return
+    g.textos(tRef.current.p.chart)
+    const S = sesionRef.current
+    if (!S) return
+    const p = posRef.current
+    if (p) g.lineasPosicion(p.res.entrada, p.res.stop, p.res.obj)
+    g.marcar(marcasDelDia(jugadasRef.current, p, S.D))
+  }, [lang])
 
   function finalizar(res: Resultado, contra: Resultado) {
     const S = sesionRef.current!
@@ -292,7 +319,7 @@ export function Practica() {
         const desdeOk = meses.filter((x) => Number(x.m.slice(0, 4)) >= desde)
         // si los datos empiezan después (o terminan antes) del año elegido, se usa todo lo que hay
         const candidatos = desdeOk.length ? desdeOk : meses
-        if (!candidatos.length) throw new Error('No hay meses con datos.')
+        if (!candidatos.length) return setAviso({ clave: 'sinMeses' })
         const total = candidatos.reduce((a, x) => a + x.velas, 0)
         let q = Math.random() * total
         let m = candidatos[candidatos.length - 1].m
@@ -307,7 +334,7 @@ export function Practica() {
         const validos = dias.map((D, i) => (D.pad || D.n < 50 ? -1 : i)).filter((i) => i >= 0)
         d = validos[Math.floor(Math.random() * validos.length)]
       } else {
-        if (!fecha) throw new Error('Elige un día.')
+        if (!fecha) return setAviso({ clave: 'eligeDia' })
         const objetivo = Number(fecha.replaceAll('-', ''))
         let m = fecha.slice(0, 7)
         for (let intento = 0; intento < 2 && d < 0; intento++) {
@@ -319,8 +346,8 @@ export function Practica() {
             m = mm === 12 ? `${y + 1}-01` : `${y}-${String(mm + 1).padStart(2, '0')}`
           }
         }
-        if (d < 0) throw new Error('No tengo datos de ese día.')
-        if (dias[d].fecha !== objetivo) setAviso(`Ese día no hubo mercado; te puse el ${fechaTexto(dias[d].fecha)}.`)
+        if (d < 0) return setAviso({ clave: 'sinDia' })
+        if (dias[d].fecha !== objetivo) setAviso({ clave: 'diaMovido', dato: fechaTexto(dias[d].fecha) })
       }
       const D = dias[d]
       const P = d > 0 ? dias[d - 1] : null
@@ -346,7 +373,7 @@ export function Practica() {
       setSesion(S)
       setVista({ r, reloj })
     } catch (e) {
-      setAviso(e instanceof Error ? e.message : String(e))
+      setAviso(comoAviso(e))
     } finally {
       setCargando(false)
     }
@@ -446,16 +473,16 @@ export function Practica() {
   const precio = (p: number) => (oculto ? signo(p - baseRef.current) : fmt(p))
 
   return (
-    <section className="practica" aria-label="Práctica">
+    <section className="practica" aria-label={tp.region}>
       <div className="p-barra">
         <div className="p-simbolo">
           <span className="p-ticker">{NQ.micro}</span>
           {WEB ? (
             <>
               <span className="p-demo" data-testid="demo">
-                Datos de ejemplo
+                {tp.sampleData}
               </span>
-              <span className="muted">Precios inventados; el NQ llega con las cuentas</span>
+              <span className="muted">{tp.sampleNote}</span>
             </>
           ) : (
             <span className="muted">Micro Nasdaq 100</span>
@@ -463,7 +490,7 @@ export function Practica() {
         </div>
         <span className="p-sep" aria-hidden="true" />
         <label className="p-campo">
-          <span>Día</span>
+          <span>{tp.day}</span>
           <input
             type="date"
             value={fecha}
@@ -473,22 +500,22 @@ export function Practica() {
           />
         </label>
         <label className="p-campo">
-          <span>Empezar</span>
+          <span>{tp.start}</span>
           <select value={inicio} onChange={(e) => setInicio(e.target.value as Inicio)}>
-            <option value="reapertura">Reapertura 18:00</option>
-            <option value="ny">Apertura NY 9:15</option>
-            <option value="hora">A una hora</option>
-            <option value="azar">Hora al azar</option>
+            <option value="reapertura">{tp.startReopen}</option>
+            <option value="ny">{tp.startNy}</option>
+            <option value="hora">{tp.startAt}</option>
+            <option value="azar">{tp.startRandom}</option>
           </select>
         </label>
         {inicio === 'hora' && (
           <label className="p-campo">
-            <span>Hora ET</span>
+            <span>{tp.timeEt}</span>
             <input type="time" value={hora} onChange={(e) => e.target.value && setHora(e.target.value)} />
           </label>
         )}
         <label className="p-campo">
-          <span>Azar desde</span>
+          <span>{tp.randomFrom}</span>
           <select value={anos.includes(desde) ? desde : (anos[0] ?? desde)} onChange={(e) => setDesde(+e.target.value)}>
             {anos.map((a) => (
               <option key={a} value={a}>
@@ -499,11 +526,11 @@ export function Practica() {
         </label>
         <label className="p-check">
           <input type="checkbox" checked={ciegas} onChange={(e) => setCiegas(e.target.checked)} />
-          <span>A ciegas</span>
+          <span>{tp.blind}</span>
         </label>
         <div className="p-botones">
           <button type="button" className="btn ghost" disabled={cargando || !meses.length} onClick={() => abrirDia(false)}>
-            Abrir día
+            {tp.openDay}
           </button>
           <button
             type="button"
@@ -512,7 +539,7 @@ export function Practica() {
             onClick={() => abrirDia(true)}
             data-testid="azar"
           >
-            Día al azar
+            {tp.randomDay}
           </button>
         </div>
       </div>
@@ -534,8 +561,8 @@ export function Practica() {
             </div>
             {!S && (
               <div className="p-vacio">
-                <strong>{cargando ? 'Cargando…' : 'Elige un día y dale "Abrir día", o prueba "Día al azar".'}</strong>
-                <span className="muted">Atajos: Espacio play/pausa · → una vela · C comprar · V vender · X cerrar</span>
+                <strong>{cargando ? tp.loading : tp.emptyHint}</strong>
+                <span className="muted">{tp.shortcuts}</span>
               </div>
             )}
           </div>
@@ -547,8 +574,8 @@ export function Practica() {
               disabled={!S || fin}
               onClick={() => setJugando((x) => !x)}
               data-testid="play"
-              aria-label={jugando ? 'Pausa' : 'Play'}
-              title={jugando ? 'Pausa (Espacio)' : 'Play (Espacio)'}
+              aria-label={jugando ? tp.pause : tp.play}
+              title={`${jugando ? tp.pause : tp.play} (${tp.spaceKey})`}
             >
               {jugando ? <IconoPausa /> : <IconoPlay />}
             </button>
@@ -558,12 +585,12 @@ export function Practica() {
               disabled={!S || fin}
               onClick={paso}
               data-testid="paso"
-              aria-label="Siguiente vela"
-              title="Siguiente vela (→)"
+              aria-label={tp.nextBar}
+              title={`${tp.nextBar} (→)`}
             >
               <IconoPaso />
             </button>
-            <div className="p-vel" role="group" aria-label="Velocidad">
+            <div className="p-vel" role="group" aria-label={tp.speed}>
               {VELOCIDADES.map((v) => (
                 <button
                   type="button"
@@ -580,22 +607,20 @@ export function Practica() {
               {S ? (
                 <>
                   <span data-testid="dia" className="p-dia">
-                    {oculto ? 'Día oculto' : `Sesión del ${fechaLarga(S.D.fecha)}`}
+                    {oculto ? tp.hiddenDay : tp.sessionOf(fechaLarga(S.D.fecha, t.locale))}
                   </span>
                   <span className="p-reloj">{horaNY(Math.floor(vista.reloj), true)} ET</span>
-                  <span className="muted">
-                    vela {vista.r} de {S.D.n}
-                  </span>
+                  <span className="muted">{tp.barOf(vista.r, S.D.n)}</span>
                   {oculto && (
                     <button type="button" className="btn tiny" onClick={() => setRevelada(true)}>
-                      Revelar día
+                      {tp.reveal}
                     </button>
                   )}
                 </>
               ) : (
-                <span className="muted">Sin sesión</span>
+                <span className="muted">{tp.noSession}</span>
               )}
-              {aviso && <span className="p-aviso">{aviso}</span>}
+              {aviso && <span className="p-aviso">{tp.avisos[aviso.clave].replace('{dato}', aviso.dato ?? '')}</span>}
             </div>
           </div>
         </div>
@@ -604,9 +629,9 @@ export function Practica() {
           {pos ? (
             <div className="p-panel p-pos" data-testid="posicion">
               <div className="p-panel-tit">
-                <span>Posición abierta</span>
+                <span>{tp.openPosition}</span>
                 <span className={pos.lado > 0 ? 'up' : 'down'}>
-                  {pos.lado > 0 ? 'Compra' : 'Venta'} {pos.contratos} {NQ.micro}
+                  {pos.lado > 0 ? tp.long : tp.short} {pos.contratos} {NQ.micro}
                 </span>
               </div>
               {vivo && (
@@ -619,27 +644,27 @@ export function Practica() {
               )}
               <dl className="p-datos">
                 <div>
-                  <dt>Entrada</dt>
+                  <dt>{tp.entry}</dt>
                   <dd>{precio(pos.res.entrada)}</dd>
                 </div>
                 <div>
-                  <dt>Stop</dt>
+                  <dt>{tp.stop}</dt>
                   <dd className="down">{precio(pos.res.stop)}</dd>
                 </div>
                 <div>
-                  <dt>Objetivo</dt>
+                  <dt>{tp.target}</dt>
                   <dd className="up">{precio(pos.res.obj)}</dd>
                 </div>
               </dl>
               <button type="button" className="btn ghost ancho" onClick={cerrar} data-testid="cerrar">
-                Cerrar posición <kbd>X</kbd>
+                {tp.closePosition} <kbd>X</kbd>
               </button>
             </div>
           ) : (
             <div className="p-panel">
               <div className="p-panel-tit">
-                <span>Orden a mercado</span>
-                <span className="muted">entra en la vela siguiente</span>
+                <span>{tp.marketOrder}</span>
+                <span className="muted">{tp.fillsNext}</span>
               </div>
               <div className="p-lados">
                 <button
@@ -649,7 +674,7 @@ export function Practica() {
                   onClick={() => abrir(-1)}
                   data-testid="vender"
                 >
-                  Vender <kbd>V</kbd>
+                  {tp.sell} <kbd>V</kbd>
                 </button>
                 <button
                   type="button"
@@ -658,16 +683,16 @@ export function Practica() {
                   onClick={() => abrir(1)}
                   data-testid="comprar"
                 >
-                  Comprar <kbd>C</kbd>
+                  {tp.buy} <kbd>C</kbd>
                 </button>
               </div>
               <div className="p-campos">
                 <label>
-                  <span>Contratos</span>
+                  <span>{tp.contracts}</span>
                   <input type="number" min={1} max={50} value={contratos} onChange={(e) => setContratos(+e.target.value || 1)} />
                 </label>
                 <label>
-                  <span>Stop (pts)</span>
+                  <span>{tp.stopPts}</span>
                   <input
                     type="number"
                     min={0.25}
@@ -677,44 +702,42 @@ export function Practica() {
                   />
                 </label>
                 <label>
-                  <span>Objetivo (pts)</span>
+                  <span>{tp.targetPts}</span>
                   <input type="number" min={0.25} step={0.25} value={objPts} onChange={(e) => setObjPts(+e.target.value || 1)} />
                 </label>
               </div>
-              <div className="p-riesgo muted">Riesgo {fmt(riesgoUsd)} USD con comisión</div>
+              <div className="p-riesgo muted">{tp.risk(fmt(riesgoUsd))}</div>
             </div>
           )}
 
-          <Marcador titulo="Esta sesión" r={resSesion} />
-          <Marcador titulo="Todo el diario" r={resTotal} />
+          <Marcador titulo={tp.thisSession} r={resSesion} />
+          <Marcador titulo={tp.allJournal} r={resTotal} />
 
           <div className="p-panel p-lista">
             <div className="p-panel-tit">
-              <span>Jugadas</span>
+              <span>{tp.trades}</span>
               <span className="muted">{jugadas.length}</span>
             </div>
             {jugadas.length > 0 ? (
               <table className="p-tabla" data-testid="jugadas">
                 <thead>
                   <tr>
-                    <th>Hora</th>
-                    <th>Lado</th>
-                    <th>Salida</th>
+                    <th>{tp.colTime}</th>
+                    <th>{tp.colSide}</th>
+                    <th>{tp.colExit}</th>
                     <th className="num">R</th>
-                    <th className="num">Al revés</th>
+                    <th className="num">{tp.flipped}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {jugadas.map((j) => (
                     <tr
                       key={j.id}
-                      title={`${j.ciegas && oculto && S?.D.fecha === j.fecha ? 'día oculto' : fechaTexto(j.fecha)} · ${signo(j.res.usd)} USD`}
+                      title={`${j.ciegas && oculto && S?.D.fecha === j.fecha ? tp.hiddenDayLower : fechaTexto(j.fecha)} · ${signo(j.res.usd)} USD`}
                     >
                       <td>{j.hora}</td>
-                      <td className={j.res.lado > 0 ? 'up' : 'down'}>{j.res.lado > 0 ? 'Compra' : 'Venta'}</td>
-                      <td className="muted">
-                        {{ stop: 'stop', objetivo: 'objetivo', cierre: '16:10', manual: 'a mano' }[j.res.tipo]}
-                      </td>
+                      <td className={j.res.lado > 0 ? 'up' : 'down'}>{j.res.lado > 0 ? tp.long : tp.short}</td>
+                      <td className="muted">{tp.exits[j.res.tipo]}</td>
                       <td className={`num ${tono(j.res.R)}`}>{signo(j.res.R)}</td>
                       <td className="num muted">{signo(j.contra.R)}</td>
                     </tr>
@@ -722,14 +745,11 @@ export function Practica() {
                 </tbody>
               </table>
             ) : (
-              <p className="muted p-nada">Todavía no hay jugadas.</p>
+              <p className="muted p-nada">{tp.noTrades}</p>
             )}
           </div>
 
-          <p className="p-ayuda">
-            "Al revés" es la misma jugada con el lado contrario: si a la larga te va igual, es volado. Simulador educativo; no es
-            asesoría de inversión.
-          </p>
+          <p className="p-ayuda">{tp.help}</p>
         </aside>
       </div>
     </section>
@@ -754,24 +774,25 @@ const IconoPaso = () => (
 )
 
 function Marcador({ titulo, r }: { titulo: string; r: ReturnType<typeof resumen> }) {
+  const tp = useI18n().t.p
   const ventaja = r.R - r.contraR
   return (
     <div className="p-panel p-score">
       <div className="p-panel-tit">
         <span>{titulo}</span>
-        <span className="muted">{r.n} jugadas</span>
+        <span className="muted">{tp.nTrades(r.n)}</span>
       </div>
       <div className="p-score-fila">
         <div>
-          <span>Ganadas</span>
+          <span>{tp.won}</span>
           <strong>{fmt(r.pct, 0)}%</strong>
         </div>
         <div>
-          <span>Tú</span>
+          <span>{tp.you}</span>
           <strong className={tono(r.R)}>{signo(r.R, 1)} R</strong>
         </div>
         <div>
-          <span>Al revés</span>
+          <span>{tp.flipped}</span>
           <strong>{signo(r.contraR, 1)} R</strong>
         </div>
         <div>
@@ -781,11 +802,7 @@ function Marcador({ titulo, r }: { titulo: string; r: ReturnType<typeof resumen>
       </div>
       {r.n > 0 && (
         <p className="p-score-nota">
-          {r.n < 30
-            ? 'Muy pocas jugadas para saber si es ventaja o suerte.'
-            : ventaja > 0
-              ? `Le vas ganando a la jugada al revés por ${fmt(ventaja, 1)} R.`
-              : `La jugada al revés te va ganando por ${fmt(-ventaja, 1)} R.`}
+          {r.n < 30 ? tp.fewTrades : ventaja > 0 ? tp.ahead(fmt(ventaja, 1)) : tp.behind(fmt(-ventaja, 1))}
         </p>
       )}
     </div>

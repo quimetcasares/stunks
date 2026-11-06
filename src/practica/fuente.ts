@@ -2,7 +2,7 @@
 //  - En local (npm run dev y practicar.bat): la carpeta practica/datos con el NQ, que no se versiona ni se publica.
 //  - En la web publicada: el mercado de mentira, armado en el navegador (ver docs/decisiones/0006-web-sin-datos-reales.md).
 import { WEB } from '../config'
-import { abrirGzip, type Dia, decodificar, type MesInfo } from './datos'
+import { abrirGzip, type Dia, decodificar, ErrorDatos, type MesInfo } from './datos'
 import { codificar, type MesFalso, mercadoDeMentira } from './sintetico'
 
 const BASE = import.meta.env.DEV ? '/datos/nq' : '../datos/nq'
@@ -23,7 +23,7 @@ export async function cargarManifiesto(): Promise<MesInfo[]> {
     }))
   }
   const r = await fetch(`${BASE}/manifest.json`, { cache: 'no-store' })
-  if (!r.ok) throw new Error('No encontré tus datos del NQ (falta practica/datos/nq/manifest.json).')
+  if (!r.ok) throw new ErrorDatos('sinManifiesto', 'No encontré los datos del NQ (falta practica/datos/nq/manifest.json).')
   const j = (await r.json()) as { meses: MesInfo[] }
   return j.meses
 }
@@ -39,12 +39,12 @@ export async function cargarMes(m: string): Promise<Dia[]> {
 
 function mesDeMentira(m: string): Dia[] {
   const mes = deMentira().find((x) => x.m === m)
-  if (!mes) throw new Error(`No hay datos de ejemplo del mes ${m}.`)
+  if (!mes) throw new ErrorDatos('sinEjemplo', `No hay datos de ejemplo del mes ${m}.`, m)
   return decodificar(codificar(mes.dias).buffer as ArrayBuffer)
 }
 
 async function mesLocal(m: string): Promise<Dia[]> {
   const r = await fetch(`${BASE}/m/${m}.bin.gz`)
-  if (!r.ok) throw new Error(`No pude abrir el mes ${m} (${r.status}).`)
+  if (!r.ok) throw new ErrorDatos('mesNoAbre', `No pude abrir el mes ${m} (${r.status}).`, `${m} (${r.status})`)
   return decodificar(await abrirGzip(new Uint8Array(await r.arrayBuffer())))
 }
