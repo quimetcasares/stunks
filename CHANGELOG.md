@@ -7,6 +7,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 ### Agregado
 
 - Versión web para Cloudflare Pages: la práctica corre con un mercado de mentira y un aviso, mientras llega el acceso al NQ por cuenta.
+- Publicación en https://stunks.pages.dev: `main` se publica sola y cada PR tiene su vista previa. Con esto queda lista la F0.
 
 ### Cambiado
 
