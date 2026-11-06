@@ -13,12 +13,22 @@ export default defineConfig({
     { name: 'compu', use: { ...devices['Desktop Chrome'] } },
     { name: 'cel', use: { ...devices['Pixel 7'] } },
   ],
-  webServer: {
-    command:
-      'node --experimental-strip-types herramientas/generar-datos-falsos.ts e2e/.datos && npx vite --port 5199 --strictPort',
-    url: 'http://localhost:5199',
-    env: { STUNKS_DATOS: 'e2e/.datos', STUNKS_E2E: '1' },
-    reuseExistingServer: !process.env.CI,
-    timeout: 90_000,
-  },
+  webServer: [
+    // La app en local, con el mercado de mentira en lugar de practica/datos.
+    {
+      command:
+        'node --experimental-strip-types herramientas/generar-datos-falsos.ts e2e/.datos && npx vite --port 5199 --strictPort',
+      url: 'http://localhost:5199',
+      env: { STUNKS_DATOS: 'e2e/.datos', STUNKS_E2E: '1' },
+      reuseExistingServer: !process.env.CI,
+      timeout: 90_000,
+    },
+    // La versión que se publica en Cloudflare Pages (npm run build), servida tal cual.
+    {
+      command: 'npx vite build && npx vite preview --port 5200 --strictPort',
+      url: 'http://localhost:5200',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 })
