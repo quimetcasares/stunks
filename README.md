@@ -32,20 +32,21 @@ Atajos: Espacio play/pausa · → una vela · C comprar · V vender · X cerrar.
 
 ## Comandos
 
-| Comando                  | Qué hace                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------- |
-| `npm run dev`            | Servidor de desarrollo en http://localhost:5173                                 |
-| `npm run ci`             | Estilo, tipos, pruebas unitarias y build, igual que en GitHub                   |
-| `npm test`               | Pruebas unitarias (Vitest)                                                      |
-| `npm run e2e`            | Pruebas de punta a punta en compu y cel (Playwright), con un mercado de mentira |
-| `npm run format`         | Formato y orden de imports (Biome)                                              |
-| `npm run build`          | `dist/` para Cloudflare Pages, con el mercado de mentira                        |
-| `npm run build:practica` | `practica/app/` para la práctica local                                          |
-| `npm run probar:motor`   | Compara el motor contra las 3,000 jugadas del juego (necesita datos locales)    |
-| `npm run db:iniciar`     | Supabase local con las migraciones (necesita Docker; puertos 55321 a 55329)     |
-| `npm run db:probar`      | Pruebas de reglas por fila (pgTAP) y lint de la base                            |
-| `npm run db:reiniciar`   | Borra la base local y vuelve a aplicar las migraciones                          |
-| `npm run db:parar`       | Apaga el Supabase local                                                         |
+| Comando                  | Qué hace                                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`            | Servidor de desarrollo en http://localhost:5173                                                                                |
+| `npm run ci`             | Estilo, tipos, pruebas unitarias y build, igual que en GitHub                                                                  |
+| `npm test`               | Pruebas unitarias (Vitest)                                                                                                     |
+| `npm run e2e`            | Pruebas de punta a punta en compu y cel (Playwright), con un mercado de mentira; las de cuentas necesitan `npm run db:iniciar` |
+| `npm run format`         | Formato y orden de imports (Biome)                                                                                             |
+| `npm run build`          | `dist/` para Cloudflare Pages, con el mercado de mentira                                                                       |
+| `npm run build:practica` | `practica/app/` para la práctica local                                                                                         |
+| `npm run probar:motor`   | Compara el motor contra las 3,000 jugadas del juego (necesita datos locales)                                                   |
+| `npm run db:iniciar`     | Supabase local con las migraciones (necesita Docker; puertos 55321 a 55329)                                                    |
+| `npm run db:probar`      | Pruebas de reglas por fila (pgTAP) y lint de la base                                                                           |
+| `npm run db:reiniciar`   | Borra la base local y vuelve a aplicar las migraciones                                                                         |
+| `npm run db:parar`       | Apaga el Supabase local                                                                                                        |
+| `npm run db:tipos`       | Vuelve a generar los tipos de la base en `src/cuenta/tipos-db.ts`                                                              |
 
 ### Base de datos
 
@@ -57,6 +58,7 @@ Producción solo cambia con migraciones: en cada PR que toca `supabase/migration
 
 ```
 src/
+  cuenta/            entrar, sesión, apodo y borrar la cuenta (Supabase)
   practica/          replay, gráficas, órdenes y motor de llenados
     datos.ts         lector del formato NQJ1
     motor.ts         reglas de llenado

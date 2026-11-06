@@ -1,0 +1,241 @@
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
+export type Database = {
+  public: {
+    Tables: {
+      accesos_nq: {
+        Row: {
+          decidido_en: string | null
+          decidido_por: string | null
+          estado: string
+          pedido_en: string
+          usuario_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          decidido_en?: string | null
+          decidido_por?: string | null
+          estado?: string
+          pedido_en?: string
+          usuario_id: string
+        }
+        Update: {
+          decidido_en?: string | null
+          decidido_por?: string | null
+          estado?: string
+          pedido_en?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      administradores: {
+        Row: {
+          desde: string
+          usuario_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          desde?: string
+          usuario_id: string
+        }
+        Update: {
+          desde?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
+      consentimientos: {
+        Row: {
+          aceptado_en: string
+          documento: string
+          id: number
+          usuario_id: string
+          version: string
+        }
+        ComputedFields: never
+        Insert: {
+          aceptado_en?: string
+          documento: string
+          id?: never
+          usuario_id?: string
+          version: string
+        }
+        Update: {
+          aceptado_en?: string
+          documento?: string
+          id?: never
+          usuario_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      mensajes: {
+        Row: {
+          autor: string | null
+          conversacion: string
+          creado_en: string
+          id: number
+          texto: string
+          tipo: string
+        }
+        ComputedFields: never
+        Insert: {
+          autor?: string | null
+          conversacion: string
+          creado_en?: string
+          id?: never
+          texto?: string
+          tipo?: string
+        }
+        Update: {
+          autor?: string | null
+          conversacion?: string
+          creado_en?: string
+          id?: never
+          texto?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      perfiles: {
+        Row: {
+          apodo: string | null
+          creado_en: string
+          id: string
+          idioma: string
+        }
+        ComputedFields: never
+        Insert: {
+          apodo?: string | null
+          creado_en?: string
+          id: string
+          idioma?: string
+        }
+        Update: {
+          apodo?: string | null
+          creado_en?: string
+          id?: string
+          idioma?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      borrar_mi_cuenta: { Args: Record<PropertyKey, never>; Returns: undefined }
+      decidir_acceso_nq: { Args: { aprobar: boolean; usuario: string }; Returns: string }
+      pedir_acceso_nq: { Args: Record<PropertyKey, never>; Returns: string }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums'] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes'] | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

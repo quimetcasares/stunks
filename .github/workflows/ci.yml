@@ -46,7 +46,9 @@ jobs:
       - run: npm ci
       - name: Navegador
         run: npx playwright install --with-deps chromium
-      - name: Pruebas con el mercado de mentira
+      - name: Supabase local para las cuentas
+        run: npm run db:iniciar
+      - name: Pruebas con el mercado de mentira y el Supabase local
         run: npx playwright test
       - uses: actions/upload-artifact@v7
         if: failure()

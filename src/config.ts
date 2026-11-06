@@ -15,4 +15,18 @@ export const APP = {
  */
 export const WEB = import.meta.env.MODE === 'production'
 
+/**
+ * Supabase para las cuentas (docs/decisiones/0008-cuentas.md). La llave es la publicable: va en la
+ * página por diseño y lo que protege los datos son las reglas por fila.
+ *  - Web publicada: el proyecto de producción.
+ *  - `npm run dev` y las pruebas: el Supabase local (`npm run db:iniciar`).
+ *  - Práctica local y archivo: sin cuentas.
+ */
+export const SUPABASE: { url: string; llave: string } | null =
+  import.meta.env.MODE === 'production'
+    ? { url: 'https://mqzgmccfykqkkxyunssp.supabase.co', llave: 'sb_publishable__1bsrdmn105h1WUKbTIP6w_VhyTDC1N' }
+    : import.meta.env.MODE === 'development'
+      ? { url: 'http://127.0.0.1:55321', llave: 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH' }
+      : null
+
 export const DAY_MS = 86_400_000
