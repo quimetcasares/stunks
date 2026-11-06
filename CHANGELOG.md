@@ -2,6 +2,16 @@
 
 Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### Agregado
+
+- Versión web para Cloudflare Pages: la práctica corre con un mercado de mentira y un aviso, mientras llega el acceso al NQ por cuenta.
+
+### Cambiado
+
+- La web publicada ya no muestra la prueba técnica ni puede pedir datos a Kraken o Coinbase; en local sigue igual.
+
 ## [0.1.0] · 2026-11-06
 
 ### Agregado

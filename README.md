@@ -37,7 +37,7 @@ Atajos: Espacio play/pausa · → una vela · C comprar · V vender · X cerrar.
 | `npm test`               | Pruebas unitarias (Vitest)                                                      |
 | `npm run e2e`            | Pruebas de punta a punta en compu y cel (Playwright), con un mercado de mentira |
 | `npm run format`         | Formato y orden de imports (Biome)                                              |
-| `npm run build`          | `dist/` para Cloudflare Pages                                                   |
+| `npm run build`          | `dist/` para Cloudflare Pages, con el mercado de mentira                        |
 | `npm run build:practica` | `practica/app/` para la práctica local                                          |
 | `npm run probar:motor`   | Compara el motor contra las 3,000 jugadas del juego (necesita datos locales)    |
 
@@ -49,7 +49,7 @@ src/
     datos.ts         lector del formato NQJ1
     motor.ts         reglas de llenado
     graficas.ts      gráficas de 2500 y 250 con Lightweight Charts
-    sintetico.ts     mercado de mentira para las pruebas
+    sintetico.ts     mercado de mentira para las pruebas y la web
   data/              fuentes de cripto (Kraken, Coinbase) para la prueba técnica
   components/        logo, gráfica chica y prueba técnica
 e2e/                 pruebas de punta a punta
@@ -59,7 +59,7 @@ docs/decisiones/     decisiones de arquitectura y de datos
 
 ## Datos y aviso
 
-Stunks nunca guarda ni sirve datos de mercado: los datos de cripto los pide el navegador de cada usuario y los del NQ se quedan en local. Detalle de términos en [docs/terminos-datos.md](docs/terminos-datos.md).
+Stunks nunca guarda ni sirve datos de mercado: los datos de cripto los pide el navegador de cada usuario y los del NQ se quedan en local. La web publicada usa un mercado de mentira (ver [decisión 0006](docs/decisiones/0006-web-sin-datos-reales.md)). Detalle de términos en [docs/terminos-datos.md](docs/terminos-datos.md).
 
 Simulador educativo. No es asesoría de inversión ni da señales. Los resultados simulados no garantizan resultados reales.
 

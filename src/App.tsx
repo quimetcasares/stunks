@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Logo } from './components/Logo'
 import { TechTest } from './components/TechTest'
-import { APP } from './config'
+import { APP, WEB } from './config'
 import { DICTS, type Lang, LangContext, loadLang, saveLang } from './i18n'
 import { Practica } from './practica/Practica'
 
@@ -82,7 +82,8 @@ export default function App() {
           <p className="lead">{t.heroText}</p>
         </section>
 
-        <TechTest />
+        {/* La prueba técnica llama a Kraken y Coinbase: solo en local (docs/decisiones/0006) */}
+        {!WEB && <TechTest />}
 
         <section className="coming" aria-labelledby="coming-title">
           <h2 id="coming-title">{t.comingTitle}</h2>

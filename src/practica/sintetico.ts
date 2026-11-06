@@ -1,5 +1,6 @@
 // Mercado de mentira en el mismo formato que los datos del NQ (NQJ1).
-// Sirve para las pruebas automáticas y la integración continua: el repo público nunca lleva datos del CME.
+// Sirve para las pruebas automáticas, la integración continua y la web publicada:
+// el repo público nunca lleva datos del CME.
 
 import type { Dia } from './datos'
 
@@ -117,4 +118,36 @@ export function diaDePrueba(velas: { t: number; o: number; h: number; l: number;
     vol: new Int32Array(n).fill(250),
     bv: new Int32Array(n).fill(125),
   }
+}
+
+/** Un mes del mercado de mentira: aaaa-mm y sus días (el primero es el último del mes anterior, marcado como relleno). */
+export interface MesFalso {
+  m: string
+  dias: DiaFalso[]
+}
+
+/**
+ * Días hábiles de enero y febrero de 2001 (fechas de mentira a propósito), siempre iguales.
+ * Lo usan las pruebas de punta a punta y la web publicada (ver docs/decisiones/0006-web-sin-datos-reales.md).
+ */
+export function mercadoDeMentira(): MesFalso[] {
+  const todos: DiaFalso[] = []
+  let precio = 60000 // en ticks: 15,000 puntos
+  let semilla = 7
+  for (let mes = 1; mes <= 2; mes++) {
+    for (let d = 1; d <= 28; d++) {
+      const dow = new Date(Date.UTC(2001, mes - 1, d)).getUTCDay()
+      if (dow === 0 || dow === 6) continue
+      const t0 = Date.UTC(2001, mes - 1, d - 1, 23, 0, 0) / 1000 // 18:00 ET del día anterior
+      const D = diaFalso(2001_00_00 + mes * 100 + d, t0, precio, 600, semilla++)
+      precio = D.velas[D.velas.length - 1].c
+      todos.push(D)
+    }
+  }
+  return [1, 2].map((mes) => {
+    const delMes = todos.filter((D) => Math.floor(D.fecha / 100) % 100 === mes)
+    const i0 = todos.indexOf(delMes[0])
+    const dias = i0 > 0 ? [{ ...todos[i0 - 1], pad: true }, ...delMes] : delMes
+    return { m: `2001-${String(mes).padStart(2, '0')}`, dias }
+  })
 }

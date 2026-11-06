@@ -415,6 +415,11 @@ input[type="number"] {
   color: var(--accent);
 }
 
+.p-demo {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .p-lado {
   display: flex;
   flex-direction: column;

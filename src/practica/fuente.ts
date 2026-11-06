@@ -1,10 +1,27 @@
-// Origen de los datos del NQ: la carpeta local practica/datos (no se versiona ni se publica).
+// Origen de los datos de la práctica:
+//  - En local (npm run dev y practicar.bat): la carpeta practica/datos con el NQ, que no se versiona ni se publica.
+//  - En la web publicada: el mercado de mentira, armado en el navegador (ver docs/decisiones/0006-web-sin-datos-reales.md).
+import { WEB } from '../config'
 import { abrirGzip, type Dia, decodificar, type MesInfo } from './datos'
+import { codificar, type MesFalso, mercadoDeMentira } from './sintetico'
 
 const BASE = import.meta.env.DEV ? '/datos/nq' : '../datos/nq'
 const cache = new Map<string, Dia[]>()
 
+let mentira: MesFalso[] | null = null
+const deMentira = () => {
+  mentira ??= mercadoDeMentira()
+  return mentira
+}
+
 export async function cargarManifiesto(): Promise<MesInfo[]> {
+  if (WEB) {
+    return deMentira().map(({ m, dias }) => ({
+      m,
+      dias: dias.filter((D) => !D.pad).length,
+      velas: dias.reduce((a, D) => a + D.velas.length, 0),
+    }))
+  }
   const r = await fetch(`${BASE}/manifest.json`, { cache: 'no-store' })
   if (!r.ok) throw new Error('No encontré tus datos del NQ (falta practica/datos/nq/manifest.json).')
   const j = (await r.json()) as { meses: MesInfo[] }
@@ -14,10 +31,20 @@ export async function cargarManifiesto(): Promise<MesInfo[]> {
 export async function cargarMes(m: string): Promise<Dia[]> {
   const hit = cache.get(m)
   if (hit) return hit
-  const r = await fetch(`${BASE}/m/${m}.bin.gz`)
-  if (!r.ok) throw new Error(`No pude abrir el mes ${m} (${r.status}).`)
-  const dias = decodificar(await abrirGzip(new Uint8Array(await r.arrayBuffer())))
+  const dias = WEB ? mesDeMentira(m) : await mesLocal(m)
   cache.set(m, dias)
   if (cache.size > 12) cache.delete(cache.keys().next().value!)
   return dias
+}
+
+function mesDeMentira(m: string): Dia[] {
+  const mes = deMentira().find((x) => x.m === m)
+  if (!mes) throw new Error(`No hay datos de ejemplo del mes ${m}.`)
+  return decodificar(codificar(mes.dias).buffer as ArrayBuffer)
+}
+
+async function mesLocal(m: string): Promise<Dia[]> {
+  const r = await fetch(`${BASE}/m/${m}.bin.gz`)
+  if (!r.ok) throw new Error(`No pude abrir el mes ${m} (${r.status}).`)
+  return decodificar(await abrirGzip(new Uint8Array(await r.arrayBuffer())))
 }

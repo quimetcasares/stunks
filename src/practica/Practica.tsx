@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { WEB } from '../config'
 import { type Dia, fechaTexto, horaNY, type MesInfo, segundosDesdeReapertura } from './datos'
 import { cargarManifiesto, cargarMes } from './fuente'
 import { Graficas, type Marca } from './graficas'
@@ -584,6 +585,11 @@ export function Practica() {
                 </>
               ) : (
                 <span className="muted">Sin sesión</span>
+              )}
+              {WEB && (
+                <span className="p-demo" data-testid="demo">
+                  Datos de ejemplo (mercado de mentira). El NQ llega con las cuentas.
+                </span>
               )}
               {aviso && <span className="p-aviso">{aviso}</span>}
             </div>
