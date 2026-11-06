@@ -29,3 +29,21 @@ test('la web no muestra la prueba técnica de los exchanges', async ({ page }) =
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   await expect(page.getByTestId('download')).toHaveCount(0)
 })
+
+test('los avisos de privacidad y de grabación están publicados en español e inglés', async ({ page }) => {
+  for (const [ruta, es, en] of [
+    ['/privacidad', 'Aviso de privacidad', 'Privacy notice'],
+    ['/grabacion', 'Aviso de grabación', 'Recording notice'],
+  ]) {
+    await page.goto(ruta)
+    await expect(page.locator('#es h1')).toHaveText(es)
+    await expect(page.locator('#en h1')).toHaveText(en)
+    await expect(page.getByRole('link', { name: 'contacto@stunks.app' }).first()).toBeVisible()
+  }
+})
+
+test('la práctica enlaza al aviso de privacidad', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: 'Aviso de privacidad' }).first().click()
+  await expect(page.locator('#es h1')).toHaveText('Aviso de privacidad')
+})

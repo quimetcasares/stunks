@@ -10,6 +10,8 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 - Publicación en https://stunks.pages.dev: `main` se publica sola y cada PR tiene su vista previa. Con esto queda lista la F0.
 - Dirección propia: https://stunks.app.
 - Cuentas: entrar con Google o con un link al correo, sin contraseñas; elegir apodo, salir y borrar la cuenta con todo lo suyo.
+- Avisos de privacidad (https://stunks.app/privacidad) y de grabación (https://stunks.app/grabacion), en español e inglés. Para usar la cuenta hay que aceptarlos; contacto en contacto@stunks.app.
+- Contador de visitas de Cloudflare, sin cookies.
 
 ### Cambiado
 
