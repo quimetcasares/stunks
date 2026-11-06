@@ -1,5 +1,5 @@
 // Origen de los datos del NQ: la carpeta local practica/datos (no se versiona ni se publica).
-import { abrirGzip, decodificar, type Dia, type MesInfo } from './datos'
+import { abrirGzip, type Dia, decodificar, type MesInfo } from './datos'
 
 const BASE = import.meta.env.DEV ? '/datos/nq' : '../datos/nq'
 const cache = new Map<string, Dia[]>()

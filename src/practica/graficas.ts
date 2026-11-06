@@ -4,18 +4,18 @@ import {
   CandlestickSeries,
   ColorType,
   CrosshairMode,
-  LineStyle,
   createChart,
   createSeriesMarkers,
   type IChartApi,
   type IPriceLine,
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
+  LineStyle,
   type SeriesMarker,
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { horaNY, type Dia } from './datos'
+import { type Dia, horaNY } from './datos'
 
 const C = {
   fondo: '#131722',
@@ -166,7 +166,13 @@ export class Graficas {
     }
     this.b250D = []
     for (let j = 0; j < D.n; j++) {
-      this.b250D.push({ time: (nP + j + 1) as UTCTimestamp, open: D.o[j] * T, high: D.h[j] * T, low: D.l[j] * T, close: D.c[j] * T })
+      this.b250D.push({
+        time: (nP + j + 1) as UTCTimestamp,
+        open: D.o[j] * T,
+        high: D.h[j] * T,
+        low: D.l[j] * T,
+        close: D.c[j] * T,
+      })
       this.chica.etiquetas.push(horaNY(D.t[j]))
     }
 
@@ -178,7 +184,13 @@ export class Graficas {
       for (let j = 0; j < P.n; j++) {
         if (P.g[j] !== g) {
           g = P.g[j]
-          this.b2500P.push({ time: (this.b2500P.length + 1) as UTCTimestamp, open: P.o[j] * T, high: P.h[j] * T, low: P.l[j] * T, close: P.c[j] * T })
+          this.b2500P.push({
+            time: (this.b2500P.length + 1) as UTCTimestamp,
+            open: P.o[j] * T,
+            high: P.h[j] * T,
+            low: P.l[j] * T,
+            close: P.c[j] * T,
+          })
           this.grande.etiquetas.push(horaNY(P.t[j]))
         } else {
           const b = this.b2500P[this.b2500P.length - 1]
@@ -218,7 +230,13 @@ export class Graficas {
     for (let j = this.r; j < hasta; j++) {
       if (D.g[j] !== this.gActual) {
         this.gActual = D.g[j]
-        this.b2500D.push({ time: this.grupoDeVela[j] as UTCTimestamp, open: D.o[j] * T, high: D.h[j] * T, low: D.l[j] * T, close: D.c[j] * T })
+        this.b2500D.push({
+          time: this.grupoDeVela[j] as UTCTimestamp,
+          open: D.o[j] * T,
+          high: D.h[j] * T,
+          low: D.l[j] * T,
+          close: D.c[j] * T,
+        })
       } else {
         const b = this.b2500D[this.b2500D.length - 1]
         b.high = Math.max(b.high, D.h[j] * T)
@@ -257,7 +275,9 @@ export class Graficas {
     const orden = (a: SeriesMarker<Time>, b: SeriesMarker<Time>) => (a.time as number) - (b.time as number)
     // la vela de la reapertura (18:00 ET), para ver dónde empieza el día
     const reapertura = (tiempo: number): SeriesMarker<Time>[] =>
-      this.r > 0 ? [{ time: tiempo as UTCTimestamp, position: 'aboveBar', color: C.marca, shape: 'square', text: 'Reapertura' }] : []
+      this.r > 0
+        ? [{ time: tiempo as UTCTimestamp, position: 'aboveBar', color: C.marca, shape: 'square', text: 'Reapertura' }]
+        : []
     this.chica.marcas.setMarkers([...reapertura(nP + 1), ...visibles.map((m) => aMarca(m, nP + m.vela + 1))].sort(orden))
     this.grande.marcas.setMarkers(
       [

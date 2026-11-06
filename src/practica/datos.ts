@@ -110,7 +110,7 @@ export function horaNY(t: number, conSegundos = false) {
   const mm = Math.floor((s % 3600) / 60)
   const ss = s % 60
   const dos = (x: number) => String(x).padStart(2, '0')
-  return `${dos(hh)}:${dos(mm)}${conSegundos ? ':' + dos(ss) : ''}`
+  return `${dos(hh)}:${dos(mm)}${conSegundos ? `:${dos(ss)}` : ''}`
 }
 
 /** "09:30" (hora de Nueva York) a segundos desde las 18:00 ET. */

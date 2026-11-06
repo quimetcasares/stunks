@@ -17,7 +17,16 @@ describe('decodificar (formato NQJ1)', () => {
     for (let j = 0; j < 500; j++) {
       const v = dia.velas[j]
       const D = dias[1]
-      expect([D.t[j], D.o[j], D.h[j], D.l[j], D.c[j], D.g[j], D.vol[j], D.bv[j]]).toEqual([v.t, v.o, v.h, v.l, v.c, v.g, v.v, v.bv])
+      expect([D.t[j], D.o[j], D.h[j], D.l[j], D.c[j], D.g[j], D.vol[j], D.bv[j]]).toEqual([
+        v.t,
+        v.o,
+        v.h,
+        v.l,
+        v.c,
+        v.g,
+        v.v,
+        v.bv,
+      ])
     }
   })
 

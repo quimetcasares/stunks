@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { fechaTexto, horaNY, segundosDesdeReapertura, type Dia, type MesInfo } from './datos'
+import { type Dia, fechaTexto, horaNY, type MesInfo, segundosDesdeReapertura } from './datos'
 import { cargarManifiesto, cargarMes } from './fuente'
 import { Graficas, type Marca } from './graficas'
-import { NQ, resolver, velaDeCierre, type Resultado } from './motor'
+import { NQ, type Resultado, resolver, velaDeCierre } from './motor'
 
 type Inicio = 'reapertura' | 'ny' | 'hora' | 'azar'
 const VELOCIDADES = [1, 2, 5, 10, 50, 100]
@@ -164,6 +164,7 @@ export function Practica() {
   }, [])
 
   // al cambiar el modo a ciegas o revelar, se repintan los precios
+  // biome-ignore lint/correctness/useExhaustiveDependencies: el formato lee refs; ciegas y revelada solo disparan el repintado
   useEffect(() => {
     const f = (p: number) => {
       if (!ciegasRef.current) return fmt(p, 2)
@@ -248,6 +249,7 @@ export function Practica() {
   }
 
   // el reloj del replay
+  // biome-ignore lint/correctness/useExhaustiveDependencies: el ciclo solo depende de jugando; lo demás se lee de refs
   useEffect(() => {
     if (!jugando) return
     let raf = 0
@@ -275,7 +277,6 @@ export function Practica() {
     }
     raf = requestAnimationFrame(cuadro)
     return () => cancelAnimationFrame(raf)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jugando])
 
   async function abrirDia(azar: boolean) {
@@ -554,7 +555,13 @@ export function Practica() {
             </button>
             <div className="p-vel" role="group" aria-label="Velocidad">
               {VELOCIDADES.map((v) => (
-                <button type="button" key={v} className={v === vel ? 'on' : ''} onClick={() => setVel(v)} aria-pressed={v === vel}>
+                <button
+                  type="button"
+                  key={v}
+                  className={v === vel ? 'on' : ''}
+                  onClick={() => setVel(v)}
+                  aria-pressed={v === vel}
+                >
                   {v}x
                 </button>
               ))}
@@ -651,7 +658,13 @@ export function Practica() {
                 </label>
                 <label>
                   <span>Stop (pts)</span>
-                  <input type="number" min={0.25} step={0.25} value={stopPts} onChange={(e) => setStopPts(+e.target.value || 1)} />
+                  <input
+                    type="number"
+                    min={0.25}
+                    step={0.25}
+                    value={stopPts}
+                    onChange={(e) => setStopPts(+e.target.value || 1)}
+                  />
                 </label>
                 <label>
                   <span>Objetivo (pts)</span>
@@ -689,7 +702,9 @@ export function Practica() {
                     >
                       <td>{j.hora}</td>
                       <td className={j.res.lado > 0 ? 'up' : 'down'}>{j.res.lado > 0 ? 'Compra' : 'Venta'}</td>
-                      <td className="muted">{{ stop: 'stop', objetivo: 'objetivo', cierre: '16:10', manual: 'a mano' }[j.res.tipo]}</td>
+                      <td className="muted">
+                        {{ stop: 'stop', objetivo: 'objetivo', cierre: '16:10', manual: 'a mano' }[j.res.tipo]}
+                      </td>
                       <td className={`num ${tono(j.res.R)}`}>{signo(j.res.R)}</td>
                       <td className="num muted">{signo(j.contra.R)}</td>
                     </tr>
@@ -702,8 +717,8 @@ export function Practica() {
           </div>
 
           <p className="p-ayuda">
-            "Al revés" es la misma jugada con el lado contrario: si a la larga te va igual, es volado. Simulador educativo; no es asesoría
-            de inversión.
+            "Al revés" es la misma jugada con el lado contrario: si a la larga te va igual, es volado. Simulador educativo; no es
+            asesoría de inversión.
           </p>
         </aside>
       </div>
