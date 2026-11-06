@@ -4,6 +4,8 @@ Simulador de trading con replay. Caes en cualquier fecha y hora, lo corres de 1x
 
 Gratis y de código abierto (AGPL-3.0). Versión actual: **0.1.0**. Plan de trabajo: [docs/roadmap.md](docs/roadmap.md).
 
+En línea: https://stunks.pages.dev (con un mercado de mentira; el NQ llega con las cuentas).
+
 ## Qué hace hoy
 
 - Replay de velas de 2500 y 250 de volumen, de 1x a 100x o vela por vela.
