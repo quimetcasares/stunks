@@ -18,7 +18,11 @@
     "e2e": "playwright test",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "ci": "biome ci . && tsc --noEmit && vitest run && vite build"
+    "ci": "biome ci . && tsc --noEmit && vitest run && vite build",
+    "db:iniciar": "supabase start -x studio,imgproxy,postgres-meta,edge-runtime,logflare,vector,supavisor",
+    "db:parar": "supabase stop",
+    "db:reiniciar": "supabase db reset",
+    "db:probar": "supabase test db && supabase db lint --fail-on warning"
   },
   "engines": {
     "node": ">=20"
@@ -35,6 +39,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.2.1",
+    "supabase": "^3.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
     "vite-plugin-singlefile": "^2.3.4",
