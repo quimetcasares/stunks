@@ -8,7 +8,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
-  use: { baseURL: 'http://localhost:5199', trace: 'retain-on-failure' },
+  // Navegador en español: las pruebas buscan los textos en español; la de idioma cambia a inglés con el botón.
+  use: { baseURL: 'http://localhost:5199', locale: 'es-MX', trace: 'retain-on-failure' },
   projects: [
     { name: 'compu', use: { ...devices['Desktop Chrome'] } },
     { name: 'cel', use: { ...devices['Pixel 7'] } },

@@ -39,6 +39,14 @@ interface Barra {
   close: number
 }
 
+/** Textos que se dibujan dentro de las gráficas; cambian con el idioma. */
+export interface TextosGrafica {
+  reapertura: string
+  entrada: string
+  stop: string
+  objetivo: string
+}
+
 export interface Marca {
   vela: number // índice de la vela de 250 del día
   tipo: 'entrada' | 'salida'
@@ -137,6 +145,7 @@ export class Graficas {
   private b2500D: Barra[] = []
   private gActual = -1
   private grupoDeVela: number[] = [] // índice de la barra de 2500 (en tiempo de mentira) para cada vela de 250 del día
+  private txt: TextosGrafica = { reapertura: 'Reapertura', entrada: 'entrada', stop: 'stop', objetivo: 'objetivo' }
 
   constructor(elGrande: HTMLElement, elChica: HTMLElement, formatoPrecio: (p: number) => string) {
     this.grande = new Panel(elGrande, formatoPrecio)
@@ -146,6 +155,11 @@ export class Graficas {
   formato(f: (p: number) => string) {
     this.grande.formato(f)
     this.chica.formato(f)
+  }
+
+  /** Cambia los textos; se ven al volver a marcar o a dibujar las líneas. */
+  textos(t: TextosGrafica) {
+    this.txt = t
   }
 
   /** Carga un día nuevo y muestra las primeras r velas de 250. */
@@ -276,7 +290,7 @@ export class Graficas {
     // la vela de la reapertura (18:00 ET), para ver dónde empieza el día
     const reapertura = (tiempo: number): SeriesMarker<Time>[] =>
       this.r > 0
-        ? [{ time: tiempo as UTCTimestamp, position: 'aboveBar', color: C.marca, shape: 'square', text: 'Reapertura' }]
+        ? [{ time: tiempo as UTCTimestamp, position: 'aboveBar', color: C.marca, shape: 'square', text: this.txt.reapertura }]
         : []
     this.chica.marcas.setMarkers([...reapertura(nP + 1), ...visibles.map((m) => aMarca(m, nP + m.vela + 1))].sort(orden))
     this.grande.marcas.setMarkers(
@@ -290,9 +304,9 @@ export class Graficas {
   lineasPosicion(entrada: number, stop: number, obj: number) {
     this.quitarLineas()
     for (const p of [this.grande, this.chica]) {
-      p.linea(entrada, C.entrada, 'entrada', false)
-      p.linea(stop, C.stop, 'stop', true)
-      p.linea(obj, C.obj, 'objetivo', true)
+      p.linea(entrada, C.entrada, this.txt.entrada, false)
+      p.linea(stop, C.stop, this.txt.stop, true)
+      p.linea(obj, C.obj, this.txt.objetivo, true)
     }
   }
 

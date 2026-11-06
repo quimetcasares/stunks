@@ -12,6 +12,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 ### Cambiado
 
 - La web publicada ya no muestra la prueba técnica ni puede pedir datos a Kraken o Coinbase; en local sigue igual.
+- Toda la app cambia de idioma con el botón ES/EN, también la práctica: textos, avisos, fechas y lo que se dibuja en las gráficas. Sin elección guardada, arranca en el idioma del navegador.
 
 ## [0.1.0] · 2026-11-06
 

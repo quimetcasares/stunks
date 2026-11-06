@@ -34,14 +34,14 @@ export default function App() {
         <div className="brand">
           <Logo size={24} />
           <span className="name">{APP.name}</span>
-          <nav className="tabs" aria-label="Secciones">
+          <nav className="tabs" aria-label={t.sections}>
             <button
               type="button"
               className={vista === 'practica' ? 'on' : ''}
               onClick={() => setVista('practica')}
               aria-pressed={vista === 'practica'}
             >
-              Práctica
+              {t.tabPractice}
             </button>
             <button
               type="button"
@@ -49,7 +49,7 @@ export default function App() {
               onClick={() => setVista('acerca')}
               aria-pressed={vista === 'acerca'}
             >
-              Acerca
+              {t.tabAbout}
             </button>
           </nav>
         </div>
@@ -76,8 +76,8 @@ export default function App() {
       <main className="wrap" hidden={vista !== 'acerca'}>
         <section className="hero">
           <h1>
-            {lang === 'es' ? '¿Ventaja o ' : 'Edge or '}
-            <span className="luck">{lang === 'es' ? 'suerte?' : 'luck?'}</span>
+            {t.titleA}
+            <span className="luck">{t.titleB}</span>
           </h1>
           <p className="lead">{t.heroText}</p>
         </section>
@@ -99,8 +99,9 @@ export default function App() {
         <footer className="foot">
           <p>{t.disclaimer}</p>
           <p className="muted">
-            Gráficas con <a href="https://www.tradingview.com/lightweight-charts/">Lightweight Charts</a> de TradingView ·{' '}
-            {APP.name} v{APP.version}
+            {t.chartsWith[0]}
+            <a href="https://www.tradingview.com/lightweight-charts/">Lightweight Charts</a>
+            {t.chartsWith[1]} · {APP.name} v{APP.version}
           </p>
         </footer>
       </main>

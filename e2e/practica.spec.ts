@@ -44,3 +44,24 @@ test('la pestaña Acerca muestra la prueba técnica', async ({ page }) => {
   await page.getByRole('button', { name: 'Acerca' }).click()
   await expect(page.getByTestId('download')).toBeVisible()
 })
+
+test('el botón EN pasa la práctica a inglés y ES la regresa', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('.p-barra input[type=date]')).not.toHaveValue('')
+  await page.getByTestId('azar').click()
+  await expect(page.getByTestId('dia')).toContainText('Sesión del')
+  for (let i = 0; i < 3; i++) await page.getByTestId('paso').click()
+  await page.getByTestId('comprar').click()
+  await expect(page.getByTestId('posicion')).toContainText('Posición abierta')
+
+  await page.getByRole('button', { name: 'EN', exact: true }).click()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(page.getByTestId('dia')).toContainText('Session:')
+  await expect(page.getByTestId('posicion')).toContainText('Open position')
+  await expect(page.getByRole('button', { name: 'Random day' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Practice' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'ES', exact: true }).click()
+  await expect(page.getByTestId('dia')).toContainText('Sesión del')
+  await expect(page.getByRole('button', { name: 'Día al azar' })).toBeVisible()
+})

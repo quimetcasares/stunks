@@ -23,6 +23,22 @@ export interface MesInfo {
   velas: number
 }
 
+/**
+ * Error de datos con clave, para que la interfaz lo muestre en el idioma elegido (`p.avisos` en src/i18n.ts).
+ * El mensaje queda en español para las herramientas y las pruebas.
+ */
+export class ErrorDatos extends Error {
+  clave: 'formato' | 'sinManifiesto' | 'sinEjemplo' | 'mesNoAbre'
+  dato: string
+
+  constructor(clave: ErrorDatos['clave'], mensaje: string, dato = '') {
+    super(mensaje)
+    this.name = 'ErrorDatos'
+    this.clave = clave
+    this.dato = dato
+  }
+}
+
 /** Descomprime si viene en gzip (algunos servidores ya lo entregan descomprimido). */
 export async function abrirGzip(u8: Uint8Array): Promise<ArrayBuffer> {
   if (u8[0] === 0x1f && u8[1] === 0x8b) {
@@ -35,7 +51,7 @@ export async function abrirGzip(u8: Uint8Array): Promise<ArrayBuffer> {
 export function decodificar(ab: ArrayBuffer): Dia[] {
   const dv = new DataView(ab)
   const magia = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3))
-  if (magia !== 'NQJ1') throw new Error('Archivo de velas con formato desconocido.')
+  if (magia !== 'NQJ1') throw new ErrorDatos('formato', 'Archivo de velas con formato desconocido.')
   const nd = dv.getUint16(4, true)
   const nb = dv.getUint32(8, true)
   let off = 16 + 20 * nd

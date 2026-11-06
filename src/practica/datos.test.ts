@@ -32,6 +32,8 @@ describe('decodificar (formato NQJ1)', () => {
 
   it('rechaza un archivo que no es NQJ1', () => {
     expect(() => decodificar(new Uint8Array(32).buffer)).toThrow(/formato desconocido/)
+    // la clave es la que usa la interfaz para mostrar el aviso en el idioma elegido
+    expect(() => decodificar(new Uint8Array(32).buffer)).toThrow(expect.objectContaining({ clave: 'formato' }))
   })
 })
 
