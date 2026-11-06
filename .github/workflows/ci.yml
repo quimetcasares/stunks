@@ -54,3 +54,19 @@ jobs:
           name: reporte-playwright
           path: playwright-report/
           retention-days: 7
+
+  base-de-datos:
+    name: Base de datos (Supabase)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Supabase local con las migraciones
+        run: npm run db:iniciar
+      - name: Reglas por fila (pgTAP) y lint
+        run: npm run db:probar

@@ -42,6 +42,10 @@ Atajos: Espacio play/pausa · → una vela · C comprar · V vender · X cerrar.
 | `npm run build`          | `dist/` para Cloudflare Pages, con el mercado de mentira                        |
 | `npm run build:practica` | `practica/app/` para la práctica local                                          |
 | `npm run probar:motor`   | Compara el motor contra las 3,000 jugadas del juego (necesita datos locales)    |
+| `npm run db:iniciar`     | Supabase local con las migraciones (necesita Docker; puertos 55321 a 55329)     |
+| `npm run db:probar`      | Pruebas de reglas por fila (pgTAP) y lint de la base                            |
+| `npm run db:reiniciar`   | Borra la base local y vuelve a aplicar las migraciones                          |
+| `npm run db:parar`       | Apaga el Supabase local                                                         |
 
 ## Estructura
 
@@ -55,6 +59,9 @@ src/
   data/              fuentes de cripto (Kraken, Coinbase) para la prueba técnica
   components/        logo, gráfica chica y prueba técnica
 e2e/                 pruebas de punta a punta
+supabase/
+  migrations/        cambios a la base (tablas, reglas por fila y funciones)
+  tests/             pruebas pgTAP de las reglas por fila
 herramientas/        servidor local, generador del mercado de mentira y comparación del motor
 docs/decisiones/     decisiones de arquitectura y de datos
 ```
