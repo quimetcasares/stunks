@@ -152,6 +152,8 @@ const es = {
     linkEnviado: (correo: string) =>
       `Listo: te mandamos un link a ${correo}. Ábrelo para entrar; si no llega en un minuto, revisa el spam.`,
     sinContrasenas: 'Sin contraseñas: entras con Google o con el link que llega a tu correo.',
+    sinMetodos: 'Por ahora no se puede entrar. Intenta más tarde.',
+    sinContrasenasCorreo: 'Sin contraseñas: entras con el link que llega a tu correo.',
     bienvenidaTitulo: 'Ya casi: elige tu apodo',
     bienvenida: 'Es el nombre con el que te ve el administrador en el chat. Lo puedes cambiar cuando quieras.',
     apodo: 'Apodo',
@@ -327,6 +329,8 @@ const en: Dict = {
     linkEnviado: (correo: string) =>
       `Done: we sent a link to ${correo}. Open it to sign in; if it doesn't arrive within a minute, check your spam folder.`,
     sinContrasenas: 'No passwords: sign in with Google or with the link sent to your email.',
+    sinMetodos: "Signing in isn't available right now. Try again later.",
+    sinContrasenasCorreo: 'No passwords: sign in with the link sent to your email.',
     bienvenidaTitulo: 'Almost there: pick a nickname',
     bienvenida: "It's the name the admin sees in the chat. You can change it anytime.",
     apodo: 'Nickname',

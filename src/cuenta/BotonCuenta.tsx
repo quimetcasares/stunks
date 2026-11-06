@@ -4,6 +4,7 @@ import { useI18n } from '../i18n'
 import { sugerirApodo } from './apodo'
 import { Dialogo } from './Dialogo'
 import { type ClaveError, claveDeError, useCuenta } from './sesion'
+import { type Metodos, metodosDeEntrada } from './supabase'
 
 export function BotonCuenta() {
   const { t } = useI18n()
@@ -64,6 +65,16 @@ function Entrar() {
   const [enviando, setEnviando] = useState(false)
   const [enviadoA, setEnviadoA] = useState<string | null>(null)
   const [error, setError] = useState<ClaveError | null>(null)
+  const [metodos, setMetodos] = useState<Metodos | null>(null)
+
+  // Solo se ofrecen las formas de entrar que Supabase tiene activas.
+  useEffect(() => {
+    let vivo = true
+    metodosDeEntrada().then((m) => vivo && setMetodos(m))
+    return () => {
+      vivo = false
+    }
+  }, [])
 
   async function google() {
     setError(null)
@@ -91,36 +102,49 @@ function Entrar() {
   return (
     <div className="dialogo-cuerpo">
       <p className="muted">{t.c.entrarIntro}</p>
-      <button type="button" className="btn primary ancho alto" onClick={google} data-testid="google">
-        {t.c.google}
-      </button>
-      <div className="separador" aria-hidden="true">
-        <span>{t.c.o}</span>
-      </div>
-      <form className="dialogo-form" onSubmit={mandar}>
-        <label className="campo">
-          <span>{t.c.correo}</span>
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            inputMode="email"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            data-testid="correo"
-          />
-        </label>
-        <button type="submit" className="btn ghost ancho alto" disabled={enviando} data-testid="mandar-link">
-          {enviando ? t.c.mandando : t.c.mandarLink}
+      {!metodos && <p className="muted">{t.p.loading}</p>}
+      {metodos?.google && (
+        <button type="button" className="btn primary ancho alto" onClick={google} data-testid="google">
+          {t.c.google}
         </button>
-      </form>
+      )}
+      {metodos?.google && metodos.correo && (
+        <div className="separador" aria-hidden="true">
+          <span>{t.c.o}</span>
+        </div>
+      )}
+      {metodos?.correo && (
+        <form className="dialogo-form" onSubmit={mandar}>
+          <label className="campo">
+            <span>{t.c.correo}</span>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              inputMode="email"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+              data-testid="correo"
+            />
+          </label>
+          <button
+            type="submit"
+            className={`btn ${metodos.google ? 'ghost' : 'primary'} ancho alto`}
+            disabled={enviando}
+            data-testid="mandar-link"
+          >
+            {enviando ? t.c.mandando : t.c.mandarLink}
+          </button>
+        </form>
+      )}
+      {metodos && !metodos.google && !metodos.correo && <p className="aviso-error">{t.c.sinMetodos}</p>}
       {enviadoA && (
         <p className="aviso-ok" role="status" data-testid="link-enviado">
           {t.c.linkEnviado(enviadoA)}
         </p>
       )}
       <Aviso clave={error} />
-      <p className="muted chico">{t.c.sinContrasenas}</p>
+      {metodos && <p className="muted chico">{metodos.google ? t.c.sinContrasenas : t.c.sinContrasenasCorreo}</p>}
     </div>
   )
 }

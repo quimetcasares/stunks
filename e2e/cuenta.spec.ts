@@ -39,6 +39,9 @@ test('entra con el link del correo, elige apodo, sigue adentro al recargar y bor
 
   await page.goto('/')
   await page.getByTestId('entrar').click()
+  await expect(page.getByTestId('correo')).toBeVisible()
+  // En el Supabase local Google está apagado (supabase/config.toml): la ventana no lo ofrece.
+  await expect(page.getByTestId('google')).toHaveCount(0)
   await page.getByTestId('correo').fill(correo)
   await page.getByTestId('mandar-link').click()
   await expect(page.getByTestId('link-enviado')).toContainText(correo)
