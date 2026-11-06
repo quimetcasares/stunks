@@ -1,0 +1,17 @@
+# Roadmap
+
+Nueve fases. La beta cerrada llega al terminar la F6 y el lanzamiento público con la F8. Cada fase cierra con una prueba que se puede checar.
+
+| Fase                         | Qué incluye                                                                                              | Listo cuando                                                                                                      | Estado                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| F0 · Base                    | Proyecto, estilo, pruebas, CI, licencia, decisiones, publicación con vista previa                        | Cada PR pasa la revisión y tiene vista previa; `main` se publica sola                                             | En curso                        |
+| F1 · Cuentas y chat          | Entrar con Google o correo, perfil, chat con traducción automática, solicitud de acceso a datos cerrados | Una cuenta nueva pide acceso por chat y se aprueba al instante; una prueba confirma que sin acceso no se lee nada | Pendiente                       |
+| F2 · Datos                   | Datos cerrados por cuenta con enlaces que caducan y marca por usuario; cripto desde el navegador         | Las velas de 250 coinciden con el juego en 30 días al azar; sin acceso, el servidor dice que no                   | Pendiente                       |
+| F3 · Gráfica y replay        | Dos gráficas, 1x a 100x, fecha, al azar, a ciegas                                                        | Un día completo corre a 100x en un cel normal sin trabarse                                                        | Avanzada (práctica local 0.1.0) |
+| F4 · Órdenes y llenados      | Mercado, límite y stop; stop y objetivo arrastrables; comisiones; volado                                 | 3,000 jugadas iguales al motor del juego                                                                          | Motor listo (3,000 de 3,000)    |
+| F5 · Grabación y diario      | Cada acción con su hora, diario y repetición de sesiones                                                 | La repetición es idéntica a lo que hizo el usuario                                                                | Pendiente                       |
+| F6 · Panel de administración | Usuarios, accesos, chats, ranking contra el volado, repeticiones                                         | Se puede ver cualquier sesión jugada por jugada → **beta cerrada**                                                | Pendiente                       |
+| F7 · Historial real          | Importar CSV de Tradovate y TopstepX y verlo sobre la gráfica                                            | Cada operación real cae en su vela                                                                                | Pendiente                       |
+| F8 · Demo y lanzamiento      | Página de inicio, demo sin cuenta, páginas legales, instalable en el cel                                 | Alguien nuevo juega la demo sin ayuda → **lanzamiento**                                                           | Pendiente                       |
+
+Después: cuentas prop (Topstep y Lucid), práctica por hora y juego rápido, dibujos e indicadores, cargar datos propios, plugins y bots, leaderboard.

@@ -1,0 +1,70 @@
+# Stunks
+
+Simulador de trading con replay. Caes en cualquier fecha y hora, lo corres de 1x a 100x, operas con stop y objetivo, y el marcador contra la jugada al revés te dice si tienes ventaja o si fue suerte.
+
+Gratis y de código abierto (AGPL-3.0). Versión actual: **0.1.0**. Plan de trabajo: [docs/roadmap.md](docs/roadmap.md).
+
+## Qué hace hoy
+
+- Replay de velas de 2500 y 250 de volumen, de 1x a 100x o vela por vela.
+- Empieza en la reapertura de las 18:00 ET, en la apertura de Nueva York, a una hora elegida o al azar.
+- Día al azar y modo a ciegas (sin fecha ni precios reales).
+- Compra y venta con stop y objetivo en puntos, cierre a mano y PnL en vivo.
+- Llenados realistas: entrada 1 tick en contra, stop con deslizamiento y objetivo solo si el precio lo pasa por 1 tick.
+- Marcador contra la jugada al revés y diario de jugadas en el navegador.
+
+## Correrlo
+
+Requiere Node.js 22.
+
+```
+npm install
+npm run dev
+```
+
+### Práctica con datos locales del NQ
+
+Los datos de futuros del CME tienen licencia y no se incluyen en este repositorio (ver [decisión 0001](docs/decisiones/0001-nq-cerrado.md)). Con datos propios en `practica/datos/nq/` (formato NQJ1, un archivo por mes), `practicar.bat` arma un servidor local en http://127.0.0.1:8642/app/ con Python.
+
+Atajos: Espacio play/pausa · → una vela · C comprar · V vender · X cerrar.
+
+## Comandos
+
+| Comando                  | Qué hace                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------- |
+| `npm run dev`            | Servidor de desarrollo en http://localhost:5173                                 |
+| `npm run ci`             | Estilo, tipos, pruebas unitarias y build, igual que en GitHub                   |
+| `npm test`               | Pruebas unitarias (Vitest)                                                      |
+| `npm run e2e`            | Pruebas de punta a punta en compu y cel (Playwright), con un mercado de mentira |
+| `npm run format`         | Formato y orden de imports (Biome)                                              |
+| `npm run build`          | `dist/` para Cloudflare Pages                                                   |
+| `npm run build:practica` | `practica/app/` para la práctica local                                          |
+| `npm run probar:motor`   | Compara el motor contra las 3,000 jugadas del juego (necesita datos locales)    |
+
+## Estructura
+
+```
+src/
+  practica/          replay, gráficas, órdenes y motor de llenados
+    datos.ts         lector del formato NQJ1
+    motor.ts         reglas de llenado
+    graficas.ts      gráficas de 2500 y 250 con Lightweight Charts
+    sintetico.ts     mercado de mentira para las pruebas
+  data/              fuentes de cripto (Kraken, Coinbase) para la prueba técnica
+  components/        logo, gráfica chica y prueba técnica
+e2e/                 pruebas de punta a punta
+herramientas/        servidor local, generador del mercado de mentira y comparación del motor
+docs/decisiones/     decisiones de arquitectura y de datos
+```
+
+## Datos y aviso
+
+Stunks nunca guarda ni sirve datos de mercado: los datos de cripto los pide el navegador de cada usuario y los del NQ se quedan en local. Detalle de términos en [docs/terminos-datos.md](docs/terminos-datos.md).
+
+Simulador educativo. No es asesoría de inversión ni da señales. Los resultados simulados no garantizan resultados reales.
+
+Gráficas con [Lightweight Charts](https://www.tradingview.com/lightweight-charts/) de TradingView.
+
+## Licencia
+
+Copyright (C) 2026 Joaquín Casares García. Distribuido bajo la [GNU Affero General Public License v3.0](LICENSE).

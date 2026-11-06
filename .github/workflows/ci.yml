@@ -1,0 +1,56 @@
+name: Revisión
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  revisar:
+    name: Estilo, tipos, pruebas y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Estilo (Biome)
+        run: npx biome ci .
+      - name: Tipos (TypeScript)
+        run: npx tsc --noEmit
+      - name: Pruebas unitarias (Vitest)
+        run: npx vitest run
+      - name: Build
+        run: npx vite build
+
+  punta-a-punta:
+    name: Pruebas de punta a punta (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Navegador
+        run: npx playwright install --with-deps chromium
+      - name: Pruebas con el mercado de mentira
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: reporte-playwright
+          path: playwright-report/
+          retention-days: 7

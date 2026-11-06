@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-archivo/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
+.wrangler/
+ABRIR-prueba-fase0.html
+practica/
+__pycache__/
+e2e/.datos/
+playwright-report/
+test-results/
