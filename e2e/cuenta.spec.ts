@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 
 // Cuentas contra el Supabase local (`npm run db:iniciar`). El correo nunca sale: cae en Mailpit.
-const SUPABASE = 'http://127.0.0.1:55321'
-const MAILPIT = 'http://127.0.0.1:55324'
+const SUPABASE = 'http://127.0.0.1:45321'
+const MAILPIT = 'http://127.0.0.1:45324'
 
 let prendido: Promise<boolean> | null = null
 const supabaseLocal = () => {

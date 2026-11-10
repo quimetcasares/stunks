@@ -37,4 +37,4 @@ La F1 agrega cuentas, un chat con el administrador y la solicitud de acceso al N
 - La web habla con Supabase: `connect-src` en `public/_headers` permite el dominio del proyecto. Sin sesión guardada, abrir la página no le pide nada (lo revisa `e2e/web.spec.ts`).
 - Al borrar la cuenta, su sesión sigue válida hasta una hora; la app cierra la sesión enseguida y la base ya no tiene nada que mostrarle.
 - El correo del administrador queda en el repo; ya es público como autor de los commits.
-- El Supabase local de Stunks usa los puertos 55321 a 55329 para no chocar con otros proyectos locales.
+- El Supabase local de Stunks usa los puertos 45320 a 45329: no chocan con otros proyectos locales y quedan abajo del rango dinámico de Windows (49152 en adelante), que Windows puede reservar al reiniciar.
