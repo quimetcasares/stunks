@@ -6,6 +6,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 
 ### Agregado
 
+- Bolsa de Stunks, primeras piezas (`src/bolsa/`, con licencia MIT): formato de operaciones OPR1, ficha de contrato de los 12 mercados y calendario de sesiones con hora de Nueva York y feriados.
 - Versión web para Cloudflare Pages: la práctica corre con un mercado de mentira y un aviso, mientras llega la bolsa de Stunks.
 - Publicación en https://stunks.pages.dev: `main` se publica sola y cada PR tiene su vista previa. Con esto queda lista la F0.
 - Dirección propia: https://stunks.app.

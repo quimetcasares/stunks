@@ -58,6 +58,10 @@ Producción solo cambia con migraciones: en cada PR que toca `supabase/migration
 
 ```
 src/
+  bolsa/             piezas públicas de la bolsa de Stunks (MIT)
+    operaciones.ts   formato de operaciones OPR1
+    mercados.ts      ficha de contrato de los 12 mercados
+    calendario.ts    hora de Nueva York, feriados y sesiones
   cuenta/            entrar, sesión, apodo y borrar la cuenta (Supabase)
   practica/          replay, gráficas, órdenes y motor de llenados
     datos.ts         lector del formato NQJ1
@@ -86,4 +90,4 @@ Gráficas con [Lightweight Charts](https://www.tradingview.com/lightweight-chart
 
 ## Licencia
 
-Copyright (C) 2026 Joaquín Casares García. Distribuido bajo la [GNU Affero General Public License v3.0](LICENSE).
+Copyright (C) 2026 Joaquín Casares García. Distribuido bajo la [GNU Affero General Public License v3.0](LICENSE), salvo `src/bolsa/`, que va bajo la [licencia MIT](src/bolsa/LICENSE) ([decisión 0010](docs/decisiones/0010-bolsa-de-stunks.md)).
