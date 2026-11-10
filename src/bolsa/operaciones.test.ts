@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest'
-import { operacionesDeMentira } from './mentira'
+import { operacionesDeMentira } from './mentira.ts'
 import {
   type Archivo,
   aColumnas,
@@ -14,7 +14,7 @@ import {
   leer,
   type Operacion,
   vacias,
-} from './operaciones'
+} from './operaciones.ts'
 
 // Sesión de mentira del 2 de enero de 2024: de las 18:00 del 1 a las 17:00 del 2, hora de Nueva York.
 const DESDE = Date.UTC(2024, 0, 1, 23)

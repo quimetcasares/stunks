@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest'
-import { aTicks, ficha, MERCADOS, precio, sesionDe, textoPrecio, valorTick } from './mercados'
+import { aTicks, ficha, MERCADOS, precio, sesionDe, textoPrecio, valorTick } from './mercados.ts'
 
 describe('ficha de contrato', () => {
   it('son 12 mercados con claves distintas', () => {

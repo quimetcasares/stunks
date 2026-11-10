@@ -12,8 +12,8 @@ import {
   sesionEn,
   sesiones,
   sumarDias,
-} from './calendario'
-import { azar } from './mentira'
+} from './calendario.ts'
+import { azar } from './mentira.ts'
 
 const z = (iso: string) => Date.parse(iso)
 

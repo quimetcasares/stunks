@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 import { describe, expect, it } from 'vitest'
-import { sesion } from './calendario'
-import { azar, operacionesDeMentira } from './mentira'
-import { aColumnas, type Operaciones } from './operaciones'
-import { armarVelas, ConstructorVelas, PERIODOS, type Regla, type Velas } from './velas'
+import { sesion } from './calendario.ts'
+import { azar, operacionesDeMentira } from './mentira.ts'
+import { aColumnas, type Operaciones } from './operaciones.ts'
+import { armarVelas, ConstructorVelas, PERIODOS, type Regla, type Velas } from './velas.ts'
 
 const T0 = Date.UTC(2024, 0, 2, 14, 30) // 9:30 de Nueva York
 
