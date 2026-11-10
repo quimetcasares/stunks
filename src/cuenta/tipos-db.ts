@@ -72,6 +72,7 @@ export type Database = {
     }
     Functions: {
       borrar_mi_cuenta: { Args: Record<PropertyKey, never>; Returns: undefined }
+      pedir_dia_bolsa: { Args: Record<PropertyKey, never>; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

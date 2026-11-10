@@ -17,6 +17,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 
 ### Cambiado
 
+- Aviso de privacidad versión 2026-11-10: dice que se cuenta cuántos días de la bolsa pide cada cuenta por hora (límite de 120) y que ese conteo se borra al día siguiente. La app lo vuelve a pedir.
 - Las cuentas ya no tienen chat ni piden acceso al NQ: el NQ queda solo para el administrador. Los avisos de privacidad y de grabación cambian de versión y la app los vuelve a pedir; el de grabación dice que llega con el Reto diario.
 - La web publicada ya no muestra la prueba técnica ni puede pedir datos a Kraken o Coinbase; en local sigue igual.
 - Toda la app cambia de idioma con el botón ES/EN, también la práctica: textos, avisos, fechas y lo que se dibuja en las gráficas. Sin elección guardada, arranca en el idioma del navegador.
