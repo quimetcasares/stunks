@@ -6,6 +6,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 
 ### Agregado
 
+- Calendario de noticias de la bolsa (`src/bolsa/noticias.ts`): fechas y horas reales de empleo, inflación y tasa de EE.UU., inventarios de petróleo, tasa europea e inflación de la zona euro, de 2018 a 2027, con nombres de parodia. Los resultados son inventados.
 - Bolsa de Stunks, primeras piezas (`src/bolsa/`, con licencia MIT): formato de operaciones OPR1, ficha de contrato de los 12 mercados y calendario de sesiones con hora de Nueva York y feriados.
 - Constructor de velas de la bolsa de Stunks: de tiempo (1 s a 1 h), de sesión, de ticks, de volumen (la operación no se parte, como en el juego) y de rango, iguales en vivo y con el histórico.
 - Versión web para Cloudflare Pages: la práctica corre con un mercado de mentira y un aviso, mientras llega la bolsa de Stunks.
@@ -17,6 +18,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 
 ### Cambiado
 
+- Formato de operaciones OPR2: cada archivo lleva las noticias de su día (lo que se esperaba y el dato anterior, y lo que salió solo si ya se publicó al final del tramo). El lector sigue aceptando OPR1.
 - El público principal es EE.UU. ([decisión 0012](docs/decisiones/0012-publico-eeuu.md)): la app arranca en inglés salvo que el navegador esté en español, y el README va en inglés.
 - Mercados con nombres nuevos, iguales en los dos idiomas: Substandard & Poor's 500 (SP), Flea 2000 (FL), West Texas Intermediocre (WT), Fool's Gold (FG), Ethereal, Solami (SLMI) y Fidocoin (FIDO). El Ewro (EW, con micro MEW) reemplaza al Peso.
 - Cada mercado tiene un id interno fijo (B01 a B12); el encabezado de OPR1 guarda ese id, así un mercado se puede renombrar sin cambiar sus días.

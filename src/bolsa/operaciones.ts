@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-// Formato de operaciones de la bolsa de Stunks (OPR1). La especificación está en src/bolsa/README.md.
+// Formato de operaciones de la bolsa de Stunks (OPR2, con las noticias del tramo; también lee OPR1). La
+// especificación está en src/bolsa/README.md.
 // No depende del navegador: corre igual en Node, Deno y cualquier navegador.
 
 /** Una operación del mercado. */
@@ -28,8 +29,22 @@ export interface Tramo {
   hasta: number // ms UTC, excluido
 }
 
+/**
+ * Una noticia del día en un tramo. Los valores van en centésimas de la unidad del dato (noticias.ts): 2.5% es 250.
+ * Cada tramo lleva todas las noticias de su día con lo que se esperaba y el dato anterior; lo que salió solo va si
+ * la noticia se publica antes del fin del tramo. Así un resultado nunca llega antes de su hora.
+ */
+export interface NoticiaDelTramo {
+  t: number // ms UTC de la publicación
+  tipo: number // código del tipo: su lugar en TIPOS_NOTICIA (noticias.ts)
+  esperado: number
+  anterior: number
+  actual: number | null // null si todavía no se publica al final del tramo
+}
+
 export interface Archivo extends Tramo {
   ops: Operaciones
+  noticias: NoticiaDelTramo[]
 }
 
 export class ErrorFormato extends Error {
@@ -39,7 +54,8 @@ export class ErrorFormato extends Error {
   }
 }
 
-export const MAGIA = 'OPR1'
+export const MAGIA = 'OPR2'
+const MAGIA_SIN_NOTICIAS = 'OPR1'
 export const ENCABEZADO = 48
 const MAX_Q = 0xffffffff
 const MIN_P = -0x80000000
@@ -150,9 +166,24 @@ function revisarTramo(a: Tramo) {
     throw new ErrorFormato('El tramo debe ir de un entero de milisegundos a otro igual o mayor.')
 }
 
-/** Arma el binario OPR1, sin comprimir. Mismas operaciones dan siempre los mismos bytes. */
+function revisarNoticias(a: Archivo) {
+  let antes = Number.NEGATIVE_INFINITY
+  a.noticias.forEach((x, k) => {
+    if (!Number.isSafeInteger(x.t) || x.t < antes)
+      throw new ErrorFormato(`Noticia ${k}: los tiempos deben ser enteros y en orden.`)
+    antes = x.t
+    if (!Number.isInteger(x.tipo) || x.tipo < 0 || x.tipo > 0xff) throw new ErrorFormato(`Noticia ${k}: el tipo va de 0 a 255.`)
+    for (const v of [x.esperado, x.anterior, x.actual ?? 0])
+      if (!Number.isSafeInteger(v)) throw new ErrorFormato(`Noticia ${k}: los valores van en centésimas enteras.`)
+    if (x.actual !== null && x.t >= a.hasta)
+      throw new ErrorFormato(`Noticia ${k}: su resultado no puede ir en un tramo que termina antes de que se publique.`)
+  })
+}
+
+/** Arma el binario OPR2, sin comprimir. Mismas operaciones y noticias dan siempre los mismos bytes. */
 export function codificar(a: Archivo): Uint8Array {
   revisarTramo(a)
+  revisarNoticias(a)
   const { n, t, p, q, lado } = a.ops
   const e = new Escritor(ENCABEZADO + n * 6)
   const dv = new DataView(e.b.buffer)
@@ -164,6 +195,7 @@ export function codificar(a: Archivo): Uint8Array {
   dv.setFloat64(24, a.desde, true)
   dv.setFloat64(32, a.hasta, true)
   dv.setInt32(40, n > 0 ? p[0] : 0, true)
+  dv.setUint32(44, a.noticias.length, true)
   e.i = ENCABEZADO
 
   let antes = a.desde
@@ -180,12 +212,20 @@ export function codificar(a: Archivo): Uint8Array {
     if (lado[i] !== 1 && lado[i] !== -1) throw new ErrorFormato(`Operación ${i}: el lado debe ser 1 o -1.`)
     e.varint(q[i] * 2 + (lado[i] === 1 ? 1 : 0))
   }
+  for (const x of a.noticias) {
+    e.varint(zigzag(x.t - a.desde))
+    e.varint(x.tipo)
+    e.varint(zigzag(x.esperado))
+    e.varint(zigzag(x.anterior))
+    e.varint(x.actual === null ? 0 : zigzag(x.actual) + 1)
+  }
   return e.bytes()
 }
 
 export function decodificar(u8: Uint8Array): Archivo {
   if (u8.length < ENCABEZADO) throw new ErrorFormato('El archivo de operaciones está cortado.')
-  if (String.fromCharCode(u8[0], u8[1], u8[2], u8[3]) !== MAGIA) throw new ErrorFormato('No es un archivo de operaciones (OPR1).')
+  const marca = String.fromCharCode(u8[0], u8[1], u8[2], u8[3])
+  if (marca !== MAGIA && marca !== MAGIA_SIN_NOTICIAS) throw new ErrorFormato('No es un archivo de operaciones (OPR2 u OPR1).')
   const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength)
   let mercado = ''
   for (let k = 8; k < 16 && u8[k] !== 0; k++) mercado += String.fromCharCode(u8[k])
@@ -199,8 +239,9 @@ export function decodificar(u8: Uint8Array): Archivo {
   revisarTramo(tramo)
   const n = dv.getUint32(20, true)
   const p0 = dv.getInt32(40, true)
-  // Cada operación ocupa al menos 3 bytes: así un encabezado falso no pide memoria de más.
-  if (n * 3 > u8.length - ENCABEZADO) throw new ErrorFormato('El archivo de operaciones está cortado.')
+  const m = marca === MAGIA ? dv.getUint32(44, true) : 0
+  // Cada operación ocupa al menos 3 bytes y cada noticia 5: así un encabezado falso no pide memoria de más.
+  if (n * 3 + m * 5 > u8.length - ENCABEZADO) throw new ErrorFormato('El archivo de operaciones está cortado.')
 
   const ops = vacias(n)
   const l = new Lector(u8, ENCABEZADO)
@@ -223,8 +264,19 @@ export function decodificar(u8: Uint8Array): Archivo {
     ops.q[i] = q
     ops.lado[i] = v % 2 === 1 ? 1 : -1
   }
+  const noticias: NoticiaDelTramo[] = []
+  for (let k = 0; k < m; k++) {
+    const t = tramo.desde + desZigzag(l.varint())
+    const tipo = l.varint()
+    const esperado = desZigzag(l.varint())
+    const anterior = desZigzag(l.varint())
+    const v = l.varint()
+    noticias.push({ t, tipo, esperado, anterior, actual: v === 0 ? null : desZigzag(v - 1) })
+  }
   if (!l.fin) throw new ErrorFormato('Sobran bytes al final del archivo de operaciones.')
-  return { ...tramo, ops }
+  const a = { ...tramo, ops, noticias }
+  revisarNoticias(a)
+  return a
 }
 
 // ─── gzip ───────────────────────────────────────────────────────────────────

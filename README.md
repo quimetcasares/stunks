@@ -59,10 +59,11 @@ Production only changes through migrations: on every PR that touches `supabase/m
 ```
 src/
   bolsa/             public pieces of the Stunks Exchange (MIT)
-    operaciones.ts   OPR1 trade format
+    operaciones.ts   OPR2 trade format (trades and the day's news)
     mercados.ts      contract specs of the 12 markets
     calendario.ts    New York time, holidays and sessions
     velas.ts         time, session, tick, volume and range candles
+    noticias.ts      news calendar: real dates and times, parody names
   cuenta/            sign-in, session, nickname and account deletion (Supabase)
   practica/          replay, charts, orders and fill engine
     datos.ts         NQJ1 format reader
