@@ -21,7 +21,7 @@ export interface Operaciones {
 
 /** El tramo que cubre un archivo: un día completo o un bloque de un día. */
 export interface Tramo {
-  mercado: string // clave del mercado: de 1 a 8 letras mayúsculas o números
+  mercado: string // id del mercado (en la bolsa, el id interno de su ficha): de 1 a 8 letras mayúsculas o números
   dia: number // aaaammdd de la sesión
   version: number // versión del generador (0 si los datos no salen del generador)
   desde: number // ms UTC, incluido
@@ -142,7 +142,7 @@ const desZigzag = (z: number) => (z % 2 === 0 ? z / 2 : -(z + 1) / 2)
 
 function revisarTramo(a: Tramo) {
   if (!/^[A-Z0-9]{1,8}$/.test(a.mercado))
-    throw new ErrorFormato('La clave del mercado debe tener de 1 a 8 letras mayúsculas o números.')
+    throw new ErrorFormato('El id del mercado debe tener de 1 a 8 letras mayúsculas o números.')
   if (!Number.isInteger(a.dia) || a.dia < 0 || a.dia > 0xffffffff) throw new ErrorFormato('El día debe ser un número aaaammdd.')
   if (!Number.isInteger(a.version) || a.version < 0 || a.version > 0xffff)
     throw new ErrorFormato('La versión debe ir de 0 a 65535.')

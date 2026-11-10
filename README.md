@@ -1,94 +1,95 @@
 # Stunks
 
-Simulador de trading con replay. Caes en cualquier fecha y hora, lo corres de 1x a 100x, operas con stop y objetivo, y el marcador contra la jugada al revés te dice si tienes ventaja o si fue suerte.
+Trading simulator with replay. Drop into any date and time, run it from 1x to 100x, trade with a stop and a target, and the score against the opposite trade tells you whether you have an edge or just got lucky.
 
-Gratis y de código abierto (AGPL-3.0). Versión actual: **0.1.0**. Plan de trabajo: [docs/roadmap.md](docs/roadmap.md).
+Free and open source (AGPL-3.0). Current version: **0.1.0**. Roadmap: [docs/roadmap.md](docs/roadmap.md) (project docs are in Spanish).
 
-En línea: https://stunks.app (con un mercado de mentira mientras llega la bolsa de Stunks, sus 12 mercados inventados).
+Live at https://stunks.app (with a fake market until the Stunks Exchange and its 12 made-up markets arrive). The app is in English, or in Spanish when the browser is set to Spanish; the ES/EN button switches it.
 
-## Qué hace hoy
+## What it does today
 
-- Replay de velas de 2500 y 250 de volumen, de 1x a 100x o vela por vela.
-- Empieza en la reapertura de las 18:00 ET, en la apertura de Nueva York, a una hora elegida o al azar.
-- Día al azar y modo a ciegas (sin fecha ni precios reales).
-- Compra y venta con stop y objetivo en puntos, cierre a mano y PnL en vivo.
-- Llenados realistas: entrada 1 tick en contra, stop con deslizamiento y objetivo solo si el precio lo pasa por 1 tick.
-- Marcador contra la jugada al revés y diario de jugadas en el navegador.
+- Replay of 2500 and 250 volume candles, from 1x to 100x or one candle at a time.
+- Starts at the 18:00 ET reopen, at the New York open, at a chosen time or at random.
+- Random day and blind mode (no date and no real prices).
+- Buy and sell with a stop and a target in points, manual exit and live P&L.
+- Realistic fills: entry 1 tick against you, stops with slippage, and targets only when price trades 1 tick through.
+- Score against the opposite trade and a trade journal in the browser.
 
-## Correrlo
+## Running it
 
-Requiere Node.js 22.
+Requires Node.js 22.
 
 ```
 npm install
 npm run dev
 ```
 
-### Práctica con datos locales del NQ
+### Practice with local NQ data
 
-Los datos de futuros del CME tienen licencia y no se incluyen en este repositorio (ver [decisión 0001](docs/decisiones/0001-nq-cerrado.md)). Con datos propios en `practica/datos/nq/` (formato NQJ1, un archivo por mes), `practicar.bat` arma un servidor local en http://127.0.0.1:8642/app/ con Python.
+CME futures data is licensed and is not included in this repository (see [decision 0001](docs/decisiones/0001-nq-cerrado.md)). With your own data in `practica/datos/nq/` (NQJ1 format, one file per month), `practicar.bat` starts a local server at http://127.0.0.1:8642/app/ with Python.
 
-Atajos: Espacio play/pausa · → una vela · C comprar · V vender · X cerrar.
+Shortcuts: Space play/pause · → one candle · C buy · V sell · X close.
 
-## Comandos
+## Commands
 
-| Comando                  | Qué hace                                                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| `npm run dev`            | Servidor de desarrollo en http://localhost:5173                                                                                |
-| `npm run ci`             | Estilo, tipos, pruebas unitarias y build, igual que en GitHub                                                                  |
-| `npm test`               | Pruebas unitarias (Vitest)                                                                                                     |
-| `npm run e2e`            | Pruebas de punta a punta en compu y cel (Playwright), con un mercado de mentira; las de cuentas necesitan `npm run db:iniciar` |
-| `npm run format`         | Formato y orden de imports (Biome)                                                                                             |
-| `npm run build`          | `dist/` para Cloudflare Pages, con el mercado de mentira                                                                       |
-| `npm run build:practica` | `practica/app/` para la práctica local                                                                                         |
-| `npm run probar:motor`   | Compara el motor contra las 3,000 jugadas del juego (necesita datos locales)                                                   |
-| `npm run db:iniciar`     | Supabase local con las migraciones (necesita Docker; puertos 45320 a 45329)                                                    |
-| `npm run db:probar`      | Pruebas de reglas por fila (pgTAP) y lint de la base                                                                           |
-| `npm run db:reiniciar`   | Borra la base local y vuelve a aplicar las migraciones                                                                         |
-| `npm run db:parar`       | Apaga el Supabase local                                                                                                        |
-| `npm run db:tipos`       | Vuelve a generar los tipos de la base en `src/cuenta/tipos-db.ts`                                                              |
+| Command                  | What it does                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`            | Development server at http://localhost:5173                                                                         |
+| `npm run ci`             | Style, types, unit tests and build, same as on GitHub                                                               |
+| `npm test`               | Unit tests (Vitest)                                                                                                 |
+| `npm run e2e`            | End-to-end tests on desktop and mobile (Playwright) with a fake market; the account tests need `npm run db:iniciar` |
+| `npm run format`         | Formatting and import order (Biome)                                                                                 |
+| `npm run build`          | `dist/` for Cloudflare Pages, with the fake market                                                                  |
+| `npm run build:practica` | `practica/app/` for local practice                                                                                  |
+| `npm run probar:motor`   | Checks the fill engine against the game's 3,000 trades (needs local data)                                           |
+| `npm run db:iniciar`     | Local Supabase with the migrations (needs Docker; ports 45320 to 45329)                                             |
+| `npm run db:probar`      | Row-level security tests (pgTAP) and database lint                                                                  |
+| `npm run db:reiniciar`   | Wipes the local database and applies the migrations again                                                           |
+| `npm run db:parar`       | Stops the local Supabase                                                                                            |
+| `npm run db:tipos`       | Regenerates the database types in `src/cuenta/tipos-db.ts`                                                          |
 
-### Base de datos
+### Database
 
-Las cuentas y sus avisos aceptados viven en Supabase ([decisión 0008](docs/decisiones/0008-cuentas.md)); el chat y el acceso al NQ para otras cuentas salieron ([decisión 0011](docs/decisiones/0011-nq-solo-administrador.md)). En local, `npm run db:iniciar` levanta un Supabase con Docker y aplica las migraciones de `supabase/migrations/`; `npm run db:probar` corre las pruebas de reglas por fila.
+Accounts and their accepted notices live in Supabase ([decision 0008](docs/decisiones/0008-cuentas.md)); chat and NQ access for other accounts were removed ([decision 0011](docs/decisiones/0011-nq-solo-administrador.md)). Locally, `npm run db:iniciar` starts Supabase with Docker and applies the migrations in `supabase/migrations/`; `npm run db:probar` runs the row-level security tests.
 
-Producción solo cambia con migraciones: en cada PR que toca `supabase/migrations/`, el workflow `Migraciones` muestra qué se aplicaría, y al fusionar en `main` las aplica. Nada se cambia a mano en la base de producción.
+Production only changes through migrations: on every PR that touches `supabase/migrations/`, the `Migraciones` workflow shows what would be applied, and merging into `main` applies it. Nothing is changed by hand in the production database.
 
-## Estructura
+## Layout
 
 ```
 src/
-  bolsa/             piezas públicas de la bolsa de Stunks (MIT)
-    operaciones.ts   formato de operaciones OPR1
-    mercados.ts      ficha de contrato de los 12 mercados
-    calendario.ts    hora de Nueva York, feriados y sesiones
-    velas.ts         velas de tiempo, sesión, ticks, volumen y rango
-  cuenta/            entrar, sesión, apodo y borrar la cuenta (Supabase)
-  practica/          replay, gráficas, órdenes y motor de llenados
-    datos.ts         lector del formato NQJ1
-    motor.ts         reglas de llenado
-    graficas.ts      gráficas de 2500 y 250 con Lightweight Charts
-    sintetico.ts     mercado de mentira para las pruebas y la web
-  data/              fuentes de cripto (Kraken, Coinbase) para la prueba técnica
-  components/        logo, gráfica chica y prueba técnica
-e2e/                 pruebas de punta a punta
+  bolsa/             public pieces of the Stunks Exchange (MIT)
+    operaciones.ts   OPR1 trade format
+    mercados.ts      contract specs of the 12 markets
+    calendario.ts    New York time, holidays and sessions
+    velas.ts         time, session, tick, volume and range candles
+  cuenta/            sign-in, session, nickname and account deletion (Supabase)
+  practica/          replay, charts, orders and fill engine
+    datos.ts         NQJ1 format reader
+    motor.ts         fill rules
+    graficas.ts      2500 and 250 charts with Lightweight Charts
+    sintetico.ts     fake market for tests and the web
+  data/              crypto sources (Kraken, Coinbase) for the technical test
+  components/        logo, small chart and technical test
+  i18n.ts            English and Spanish texts
+e2e/                 end-to-end tests
 supabase/
-  migrations/        cambios a la base (tablas, reglas por fila y funciones)
-  tests/             pruebas pgTAP de las reglas por fila
-herramientas/        servidor local, generador del mercado de mentira y comparación del motor
-docs/decisiones/     decisiones de arquitectura y de datos
+  migrations/        database changes (tables, row-level rules and functions)
+  tests/             pgTAP tests of the row-level rules
+herramientas/        local server, fake market generator and engine comparison
+docs/decisiones/     architecture and data decisions
 ```
 
-## Datos y aviso
+## Data and disclaimer
 
-Stunks no sirve datos del CME ni de ningún exchange: sus mercados son inventados ([decisión 0010](docs/decisiones/0010-bolsa-de-stunks.md)) y el NQ se queda en local ([decisión 0011](docs/decisiones/0011-nq-solo-administrador.md)). Mientras llega la bolsa, la web publicada usa un mercado de mentira ([decisión 0006](docs/decisiones/0006-web-sin-datos-reales.md)). La prueba técnica local todavía pide cripto a Kraken y Coinbase desde el navegador; detalle de términos en [docs/terminos-datos.md](docs/terminos-datos.md).
+Stunks does not serve data from CME or any exchange: its markets are made up ([decision 0010](docs/decisiones/0010-bolsa-de-stunks.md)) and the NQ stays local ([decision 0011](docs/decisiones/0011-nq-solo-administrador.md)). Until the exchange arrives, the published web uses a fake market ([decision 0006](docs/decisiones/0006-web-sin-datos-reales.md)). The local technical test still requests crypto data from Kraken and Coinbase from the browser; terms in [docs/terminos-datos.md](docs/terminos-datos.md).
 
-Qué datos guarda Stunks con las cuentas y qué se graba de la práctica: [aviso de privacidad](https://stunks.app/privacidad) y [aviso de grabación](https://stunks.app/grabacion) ([decisión 0009](docs/decisiones/0009-avisos.md)). Contacto: contacto@stunks.app.
+What Stunks stores with accounts and what is recorded from practice: [privacy notice](https://stunks.app/privacidad) and [recording notice](https://stunks.app/grabacion) ([decision 0009](docs/decisiones/0009-avisos.md)). Contact: contacto@stunks.app.
 
-Simulador educativo. No es asesoría de inversión ni da señales. Los resultados simulados no garantizan resultados reales.
+Educational simulator. It is not investment advice and gives no signals. Simulated results do not guarantee real results.
 
-Gráficas con [Lightweight Charts](https://www.tradingview.com/lightweight-charts/) de TradingView.
+Charts by [Lightweight Charts](https://www.tradingview.com/lightweight-charts/) from TradingView.
 
-## Licencia
+## License
 
-Copyright (C) 2026 Joaquín Casares García. Distribuido bajo la [GNU Affero General Public License v3.0](LICENSE), salvo `src/bolsa/`, que va bajo la [licencia MIT](src/bolsa/LICENSE) ([decisión 0010](docs/decisiones/0010-bolsa-de-stunks.md)).
+Copyright (C) 2026 Joaquín Casares García. Distributed under the [GNU Affero General Public License v3.0](LICENSE), except `src/bolsa/`, which is under the [MIT license](src/bolsa/LICENSE) ([decision 0010](docs/decisiones/0010-bolsa-de-stunks.md)).

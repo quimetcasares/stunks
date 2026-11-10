@@ -17,6 +17,9 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 
 ### Cambiado
 
+- El público principal es EE.UU. ([decisión 0012](docs/decisiones/0012-publico-eeuu.md)): la app arranca en inglés salvo que el navegador esté en español, y el README va en inglés.
+- Mercados con nombres nuevos, iguales en los dos idiomas: Substandard & Poor's 500 (SP), Flea 2000 (FL), West Texas Intermediocre (WT), Fool's Gold (FG), Ethereal, Solami (SLMI) y Fidocoin (FIDO). El Ewro (EW, con micro MEW) reemplaza al Peso.
+- Cada mercado tiene un id interno fijo (B01 a B12); el encabezado de OPR1 guarda ese id, así un mercado se puede renombrar sin cambiar sus días.
 - Aviso de privacidad versión 2026-11-10: dice que se cuenta cuántos días de la bolsa pide cada cuenta por hora (límite de 120) y que ese conteo se borra al día siguiente. La app lo vuelve a pedir.
 - Las cuentas ya no tienen chat ni piden acceso al NQ: el NQ queda solo para el administrador. Los avisos de privacidad y de grabación cambian de versión y la app los vuelve a pedir; el de grabación dice que llega con el Reto diario.
 - La web publicada ya no muestra la prueba técnica ni puede pedir datos a Kraken o Coinbase; en local sigue igual.
