@@ -53,6 +53,7 @@ describe('ficha de contrato', () => {
     expect(textoPrecio(ficha('CR'), 6003)).toBe('60.03')
     expect(textoPrecio(ficha('PS'), 5050)).toBe('0.05050')
     expect(textoPrecio(ficha('FIRU'), 9000)).toBe('0.009000')
+    expect(textoPrecio(ficha('CHUPA'), 61234)).toBe('0.00061234')
     expect(textoPrecio(ficha('MQ'), -1)).toBe('-0.25')
     expect(precio(ficha('PU'), 3)).toBe(0.3)
   })

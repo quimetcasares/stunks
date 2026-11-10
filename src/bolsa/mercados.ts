@@ -65,7 +65,7 @@ export const MERCADOS: readonly Ficha[] = [
   cripto('ETR', 'Etéreo', 0.01, 2, 0.0001),
   cripto('SOLE', 'Solecito', 0.0001, 4, 0.01, 20200401),
   cripto('FIRU', 'Firulais', 0.000001, 6, 1),
-  cripto('CHUPA', 'Chupacabras', 0.000001, 6, 1, 20240101),
+  cripto('CHUPA', 'Chupacabras', 0.00000001, 8, 1, 20240101), // tick chico: su precio anda en milésimas
 ]
 
 const porClave = new Map(MERCADOS.map((f) => [f.clave, f]))
