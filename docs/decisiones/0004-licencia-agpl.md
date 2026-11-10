@@ -1,6 +1,6 @@
 # 0004 · Código público con licencia AGPL
 
-**Estado:** vigente · **Fecha:** 2026-11-06
+**Estado:** vigente; `src/bolsa/` va con MIT ([0010](0010-bolsa-de-stunks.md)) · **Fecha:** 2026-11-06
 
 ## Contexto
 

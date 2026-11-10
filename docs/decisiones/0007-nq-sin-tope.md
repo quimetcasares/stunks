@@ -1,6 +1,6 @@
 # 0007 · El acceso al NQ no tiene tope de cuentas
 
-**Estado:** vigente · **Fecha:** 2026-11-06 · **Reemplaza:** el tope de 10 a 15 cuentas de [0001](0001-nq-cerrado.md)
+**Estado:** reemplazada por la [0011](0011-nq-solo-administrador.md) · **Fecha:** 2026-11-06 · **Reemplaza:** el tope de 10 a 15 cuentas de [0001](0001-nq-cerrado.md)
 
 ## Contexto
 
