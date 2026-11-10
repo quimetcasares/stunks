@@ -96,11 +96,11 @@ export class ConstructorVelas {
   private acumulado = 0
   private sesion = { dia: 0, abre: 0, cierra: 0 }
 
-  constructor(
-    readonly regla: Regla,
-    capacidad = 1024,
-  ) {
+  readonly regla: Regla
+
+  constructor(regla: Regla, capacidad = 1024) {
     revisarRegla(regla)
+    this.regla = regla
     this.cols = columnas(Math.max(1, capacidad))
   }
 

@@ -108,12 +108,11 @@ class Escritor {
 }
 
 class Lector {
+  private u8: Uint8Array
   i: number
 
-  constructor(
-    private u8: Uint8Array,
-    inicio: number,
-  ) {
+  constructor(u8: Uint8Array, inicio: number) {
+    this.u8 = u8
     this.i = inicio
   }
 
