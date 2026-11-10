@@ -6,6 +6,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 
 ### Agregado
 
+- Formato del libro de órdenes de la bolsa LIB1 (`src/bolsa/libro.ts`): fotos de los mejores 10 niveles de compra y de venta, cada una con solo lo que cambió, y la escalera del DOM en cualquier momento. Prepara el DOM de la F3.
 - Calendario de noticias de la bolsa (`src/bolsa/noticias.ts`): fechas y horas reales de empleo, inflación y tasa de EE.UU., inventarios de petróleo, tasa europea e inflación de la zona euro, de 2018 a 2027, con nombres de parodia. Los resultados son inventados.
 - Bolsa de Stunks, primeras piezas (`src/bolsa/`, con licencia MIT): formato de operaciones OPR1, ficha de contrato de los 12 mercados y calendario de sesiones con hora de Nueva York y feriados.
 - Constructor de velas de la bolsa de Stunks: de tiempo (1 s a 1 h), de sesión, de ticks, de volumen (la operación no se parte, como en el juego) y de rango, iguales en vivo y con el histórico.
