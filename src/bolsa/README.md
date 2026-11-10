@@ -2,7 +2,7 @@
 
 Lo que la app necesita para leer y mostrar los mercados de la bolsa de Stunks ([decisión 0010](../../docs/decisiones/0010-bolsa-de-stunks.md)). Esta carpeta va bajo la licencia MIT ([LICENSE](LICENSE)); el resto del repo, bajo la AGPL. El generador de los mercados no está aquí.
 
-Nada de esta carpeta depende del navegador: corre igual en Node, Deno y cualquier navegador, sin `Intl` ni datos de zonas horarias.
+Nada de esta carpeta depende del navegador: corre igual en Node, Deno y cualquier navegador, sin `Intl` ni datos de zonas horarias. Los imports llevan la extensión `.ts` para que Deno cargue los archivos tal cual.
 
 | Archivo          | Qué tiene                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------- |

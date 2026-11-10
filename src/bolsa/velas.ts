@@ -2,8 +2,8 @@
 // Constructor de velas de la bolsa de Stunks: de tiempo, de sesión, de ticks, de volumen y de rango,
 // todas desde la misma lista de operaciones. Recibe operaciones de una en una (en vivo) o en bloque (histórico)
 // y da exactamente las mismas velas de las dos formas. Si en un periodo no hubo operaciones, no hay vela.
-import { type Horario, sesionEn } from './calendario'
-import type { Operaciones } from './operaciones'
+import { type Horario, sesionEn } from './calendario.ts'
+import type { Operaciones } from './operaciones.ts'
 
 /**
  * Cómo se cortan las velas:

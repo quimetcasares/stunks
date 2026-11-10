@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Ficha de contrato de los 12 mercados de la bolsa de Stunks: lo que la app necesita para mostrar precios
 // y calcular resultados. Cómo se mueve cada mercado no va aquí; eso es del generador (decisión 0010).
-import { HISTORICO_DESDE, type Horario, type Sesion, sesion } from './calendario'
+import { HISTORICO_DESDE, type Horario, type Sesion, sesion } from './calendario.ts'
 
 export type Clave = 'MQ' | 'EP' | 'DJ' | 'PU' | 'CR' | 'OR' | 'PS' | 'BTY' | 'ETR' | 'SOLE' | 'FIRU' | 'CHUPA'
 

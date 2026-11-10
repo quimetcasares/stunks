@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Operaciones de mentira para las pruebas: una caminata al azar con semilla.
 // No es el generador de la bolsa y no copia ningún mercado real.
-import { type Operaciones, vacias } from './operaciones'
+import { type Operaciones, vacias } from './operaciones.ts'
 
 /** Generador pseudoaleatorio con semilla (mulberry32): mismas semillas, mismos números. */
 export function azar(semilla: number) {
