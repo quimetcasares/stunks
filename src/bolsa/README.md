@@ -9,6 +9,7 @@ Nada de esta carpeta depende del navegador: corre igual en Node, Deno y cualquie
 | `operaciones.ts` | El formato de operaciones (OPR1): codificar, decodificar y comprimir                        |
 | `mercados.ts`    | Ficha de contrato de los 12 mercados: tick, valor por punto, micro, unidad y primera sesión |
 | `calendario.ts`  | Hora de Nueva York, feriados y sesiones de futuros y de cripto                              |
+| `velas.ts`       | Constructor de velas de tiempo, de sesión, de ticks, de volumen y de rango                  |
 | `mentira.ts`     | Operaciones de mentira con semilla, solo para pruebas                                       |
 
 ## Formato OPR1
@@ -37,6 +38,18 @@ Un archivo guarda las operaciones de un mercado en un tramo de tiempo: un día c
 3. Cantidad y lado: `q × 2 + c`, donde `c` es 1 si la operación pegó contra la venta (compra agresiva) y 0 si pegó contra la compra.
 
 Las operaciones van en orden de tiempo, dentro del tramo. La cantidad es un entero de 1 o más en la unidad mínima del mercado (`unidad` en la ficha). Un tramo sin operaciones es válido: así un bloque vacío se distingue de uno que falta. Si el formato cambia, cambia la marca (`OPR2`).
+
+## Velas
+
+Todas salen de la misma lista de operaciones. El constructor las recibe de una en una (en vivo) o en bloque (histórico) y da exactamente las mismas velas de las dos formas. Si en un periodo no hubo operaciones, no hay vela.
+
+- **Tiempo:** 1 s, 5 s, 15 s, 1 min, 5 min, 15 min y 1 h, contados desde la época UTC (cualquier divisor de una hora queda alineado con las horas de Nueva York).
+- **Sesión:** una vela por día de sesión; empieza en la apertura de las 18:00.
+- **Ticks:** cada `n` operaciones.
+- **Volumen:** la operación no se parte. Va completa a la vela número (volumen acumulado incluyéndola - 1) / `n`, sin decimales; una operación grande puede brincarse números. Así la vela de 2500 junta las de 250 con el mismo número entre 10, igual que en el juego.
+- **Rango:** se abre una vela nueva cuando la operación haría que el máximo y el mínimo de la vela se separaran más de `n` ticks.
+
+Las velas de ticks, volumen y rango cuentan desde la primera operación que recibe el constructor; para empezar de cero en cada sesión se usa un constructor por sesión.
 
 ## Sesiones
 
