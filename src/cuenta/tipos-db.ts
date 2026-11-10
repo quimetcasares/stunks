@@ -3,31 +3,6 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
-      accesos_nq: {
-        Row: {
-          decidido_en: string | null
-          decidido_por: string | null
-          estado: string
-          pedido_en: string
-          usuario_id: string
-        }
-        ComputedFields: never
-        Insert: {
-          decidido_en?: string | null
-          decidido_por?: string | null
-          estado?: string
-          pedido_en?: string
-          usuario_id: string
-        }
-        Update: {
-          decidido_en?: string | null
-          decidido_por?: string | null
-          estado?: string
-          pedido_en?: string
-          usuario_id?: string
-        }
-        Relationships: []
-      }
       administradores: {
         Row: {
           desde: string
@@ -69,34 +44,6 @@ export type Database = {
         }
         Relationships: []
       }
-      mensajes: {
-        Row: {
-          autor: string | null
-          conversacion: string
-          creado_en: string
-          id: number
-          texto: string
-          tipo: string
-        }
-        ComputedFields: never
-        Insert: {
-          autor?: string | null
-          conversacion: string
-          creado_en?: string
-          id?: never
-          texto?: string
-          tipo?: string
-        }
-        Update: {
-          autor?: string | null
-          conversacion?: string
-          creado_en?: string
-          id?: never
-          texto?: string
-          tipo?: string
-        }
-        Relationships: []
-      }
       perfiles: {
         Row: {
           apodo: string | null
@@ -125,8 +72,6 @@ export type Database = {
     }
     Functions: {
       borrar_mi_cuenta: { Args: Record<PropertyKey, never>; Returns: undefined }
-      decidir_acceso_nq: { Args: { aprobar: boolean; usuario: string }; Returns: string }
-      pedir_acceso_nq: { Args: Record<PropertyKey, never>; Returns: string }
     }
     Enums: {
       [_ in never]: never
