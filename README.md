@@ -62,6 +62,7 @@ src/
     operaciones.ts   formato de operaciones OPR1
     mercados.ts      ficha de contrato de los 12 mercados
     calendario.ts    hora de Nueva York, feriados y sesiones
+    velas.ts         velas de tiempo, sesión, ticks, volumen y rango
   cuenta/            entrar, sesión, apodo y borrar la cuenta (Supabase)
   practica/          replay, gráficas, órdenes y motor de llenados
     datos.ts         lector del formato NQJ1
