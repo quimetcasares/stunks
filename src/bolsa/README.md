@@ -6,7 +6,8 @@ Nada de esta carpeta depende del navegador: corre igual en Node, Deno y cualquie
 
 | Archivo          | Qué tiene                                                                                               |
 | ---------------- | ------------------------------------------------------------------------------------------------------- |
-| `operaciones.ts` | El formato de operaciones (OPR1): codificar, decodificar y comprimir                                    |
+| `operaciones.ts` | El formato de operaciones (OPR2): codificar, decodificar y comprimir                                    |
+| `libro.ts`       | El formato del libro de órdenes (LIB1) y la escalera del DOM en cada momento                            |
 | `mercados.ts`    | Ficha de contrato de los 12 mercados: id interno, tick, valor por punto, micro, unidad y primera sesión |
 | `calendario.ts`  | Hora de Nueva York, feriados y sesiones de futuros y de cripto                                          |
 | `velas.ts`       | Constructor de velas de tiempo, de sesión, de ticks, de volumen y de rango                              |
@@ -51,6 +52,37 @@ Las operaciones van en orden de tiempo, dentro del tramo. La cantidad es un ente
 Cada tramo lleva todas las noticias de su día con lo que se esperaba y el dato anterior, que se conocen desde antes. Lo que salió solo va si se publica antes del fin del tramo: un resultado nunca llega antes de su hora, ni en el en vivo ni en los días privados.
 
 **OPR1** es lo mismo sin noticias (los bytes 44 a 47 en 0). El lector lo sigue aceptando.
+
+## Formato LIB1
+
+Un archivo guarda fotos del libro de órdenes de un mercado en un tramo de tiempo: los mejores `N` niveles de compra y de venta, con lo que hay en cada uno. Va aparte de las operaciones, con el mismo tramo, y también en little-endian. Las mismas fotos dan siempre los mismos bytes.
+
+**Encabezado (48 bytes)**
+
+| Byte | Tamaño | Qué                                                                     |
+| ---- | ------ | ----------------------------------------------------------------------- |
+| 0    | 4      | `LIB1`                                                                  |
+| 4    | 2      | Versión del generador (u16; 0 si los datos no salen de ahí)             |
+| 6    | 2      | Niveles por lado `N` (u16, de 1 a 26)                                   |
+| 8    | 8      | Id del mercado en ASCII, rellena con ceros (como en OPR2)               |
+| 16   | 4      | Día de la sesión, aaaammdd (u32)                                        |
+| 20   | 4      | Número de fotos `n` (u32)                                               |
+| 24   | 8      | Inicio del tramo, ms UTC, incluido (f64 con valor entero)               |
+| 32   | 8      | Fin del tramo, ms UTC, excluido (f64 con valor entero)                  |
+| 40   | 4      | Mejor precio de compra de la primera foto en ticks (i32; 0 si `n` es 0) |
+| 44   | 4      | Reservado, en 0                                                         |
+
+**Fotos.** `n` registros en orden de tiempo, dentro del tramo, cada uno con varint (LEB128 sin signo, de 7 en 7 bits):
+
+1. Tiempo: milisegundos desde la foto anterior; la primera, desde el inicio del tramo.
+2. Mejor precio de compra: ticks desde la foto anterior en zigzag; la primera es 0.
+3. Spread menos 1: el mejor precio de venta es el de compra más el spread (1 tick o más).
+4. Máscara de los niveles que cambiaron: el bit `j` es el nivel `j`; de 0 a `N` - 1, los de compra desde el mejor hacia abajo, y de `N` a 2`N` - 1, los de venta desde el mejor hacia arriba. La primera foto los trae todos.
+5. Lo que hay en cada nivel marcado, en orden de `j`, en la unidad mínima del mercado (como la cantidad de las operaciones). Un nivel sin nada es 0. Los que no van en la máscara se quedan como en la foto anterior.
+
+Los niveles van tick por tick desde el mejor precio: el nivel `j` de compra está en el mejor menos `j` ticks y el de venta en el mejor de venta más `j`. Si cambia el mejor precio, cambian de lugar todos los niveles y la máscara los marca. Un tramo sin fotos es válido. Si el formato cambia, cambia la marca (`LIB2`).
+
+**Fotos de la bolsa.** El generador toma una foto cada vez que el libro cambia, como mucho una cada 100 ms, en los múltiplos de 100 ms desde el inicio del tramo; cada foto ya incluye las operaciones hasta su hora. Usa 10 niveles por lado y los mismos tramos que las operaciones. El DOM en un momento `t` es la última foto en o antes de `t` (`escaleraEn`).
 
 ## Velas
 
