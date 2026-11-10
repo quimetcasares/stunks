@@ -1,6 +1,6 @@
 # 0001 · Los datos del NQ nunca son públicos
 
-**Estado:** vigente; el tope de cuentas lo reemplaza la [0007](0007-nq-sin-tope.md) · **Fecha:** 2026-11-06
+**Estado:** vigente en que el NQ nunca es público; el acceso para otras cuentas lo reemplaza la [0011](0011-nq-solo-administrador.md) · **Fecha:** 2026-11-06
 
 ## Contexto
 

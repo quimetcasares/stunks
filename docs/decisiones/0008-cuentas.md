@@ -1,6 +1,6 @@
 # 0008 · Cuentas, chat y acceso al NQ en Supabase
 
-**Estado:** vigente · **Fecha:** 2026-11-06
+**Estado:** vigente; el chat y el acceso al NQ los reemplaza la [0011](0011-nq-solo-administrador.md) · **Fecha:** 2026-11-06
 
 ## Contexto
 

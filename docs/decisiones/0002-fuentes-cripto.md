@@ -1,6 +1,6 @@
 # 0002 · De dónde salen los datos de cripto
 
-**Estado:** vigente · **Fecha:** 2026-11-06
+**Estado:** reemplazada por la [0010](0010-bolsa-de-stunks.md) · **Fecha:** 2026-11-06
 
 ## Contexto
 

@@ -4,7 +4,7 @@ Simulador de trading con replay. Caes en cualquier fecha y hora, lo corres de 1x
 
 Gratis y de código abierto (AGPL-3.0). Versión actual: **0.1.0**. Plan de trabajo: [docs/roadmap.md](docs/roadmap.md).
 
-En línea: https://stunks.app (con un mercado de mentira; el NQ llega con las cuentas).
+En línea: https://stunks.app (con un mercado de mentira mientras llega la bolsa de Stunks, sus 12 mercados inventados).
 
 ## Qué hace hoy
 
@@ -76,7 +76,7 @@ docs/decisiones/     decisiones de arquitectura y de datos
 
 ## Datos y aviso
 
-Stunks nunca guarda ni sirve datos de mercado: los datos de cripto los pide el navegador de cada usuario y los del NQ se quedan en local. La web publicada usa un mercado de mentira (ver [decisión 0006](docs/decisiones/0006-web-sin-datos-reales.md)). Detalle de términos en [docs/terminos-datos.md](docs/terminos-datos.md).
+Stunks no sirve datos del CME ni de ningún exchange: sus mercados son inventados ([decisión 0010](docs/decisiones/0010-bolsa-de-stunks.md)) y el NQ se queda en local ([decisión 0011](docs/decisiones/0011-nq-solo-administrador.md)). Mientras llega la bolsa, la web publicada usa un mercado de mentira ([decisión 0006](docs/decisiones/0006-web-sin-datos-reales.md)). La prueba técnica local todavía pide cripto a Kraken y Coinbase desde el navegador; detalle de términos en [docs/terminos-datos.md](docs/terminos-datos.md).
 
 Qué datos guarda Stunks con las cuentas y qué se graba de la práctica: [aviso de privacidad](https://stunks.app/privacidad) y [aviso de grabación](https://stunks.app/grabacion) ([decisión 0009](docs/decisiones/0009-avisos.md)). Contacto: contacto@stunks.app.
 

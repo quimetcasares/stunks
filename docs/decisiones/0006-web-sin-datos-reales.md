@@ -1,6 +1,6 @@
 # 0006 · La web publicada usa el mercado de mentira
 
-**Estado:** vigente · **Fecha:** 2026-11-06
+**Estado:** vigente hasta que la F3 pase la web a la bolsa ([0010](0010-bolsa-de-stunks.md)); el NQ por cuenta ya no llega ([0011](0011-nq-solo-administrador.md)) · **Fecha:** 2026-11-06
 
 ## Contexto
 
