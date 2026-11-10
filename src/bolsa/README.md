@@ -4,13 +4,13 @@ Lo que la app necesita para leer y mostrar los mercados de la bolsa de Stunks ([
 
 Nada de esta carpeta depende del navegador: corre igual en Node, Deno y cualquier navegador, sin `Intl` ni datos de zonas horarias. Los imports llevan la extensión `.ts` para que Deno cargue los archivos tal cual, y solo se usa TypeScript que Node puede correr quitando los tipos (sin propiedades declaradas en el constructor ni `enum`).
 
-| Archivo          | Qué tiene                                                                                   |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| `operaciones.ts` | El formato de operaciones (OPR1): codificar, decodificar y comprimir                        |
-| `mercados.ts`    | Ficha de contrato de los 12 mercados: tick, valor por punto, micro, unidad y primera sesión |
-| `calendario.ts`  | Hora de Nueva York, feriados y sesiones de futuros y de cripto                              |
-| `velas.ts`       | Constructor de velas de tiempo, de sesión, de ticks, de volumen y de rango                  |
-| `mentira.ts`     | Operaciones de mentira con semilla, solo para pruebas                                       |
+| Archivo          | Qué tiene                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------- |
+| `operaciones.ts` | El formato de operaciones (OPR1): codificar, decodificar y comprimir                                    |
+| `mercados.ts`    | Ficha de contrato de los 12 mercados: id interno, tick, valor por punto, micro, unidad y primera sesión |
+| `calendario.ts`  | Hora de Nueva York, feriados y sesiones de futuros y de cripto                                          |
+| `velas.ts`       | Constructor de velas de tiempo, de sesión, de ticks, de volumen y de rango                              |
+| `mentira.ts`     | Operaciones de mentira con semilla, solo para pruebas                                                   |
 
 ## Formato OPR1
 
@@ -18,18 +18,18 @@ Un archivo guarda las operaciones de un mercado en un tramo de tiempo: un día c
 
 **Encabezado (48 bytes)**
 
-| Byte | Tamaño | Qué                                                          |
-| ---- | ------ | ------------------------------------------------------------ |
-| 0    | 4      | `OPR1`                                                       |
-| 4    | 2      | Versión del generador (u16; 0 si los datos no salen de ahí)  |
-| 6    | 2      | Reservado, en 0                                              |
-| 8    | 8      | Clave del mercado en ASCII, rellena con ceros                |
-| 16   | 4      | Día de la sesión, aaaammdd (u32)                             |
-| 20   | 4      | Número de operaciones `n` (u32)                              |
-| 24   | 8      | Inicio del tramo, ms UTC, incluido (f64 con valor entero)    |
-| 32   | 8      | Fin del tramo, ms UTC, excluido (f64 con valor entero)       |
-| 40   | 4      | Precio de la primera operación en ticks (i32; 0 si `n` es 0) |
-| 44   | 4      | Reservado, en 0                                              |
+| Byte | Tamaño | Qué                                                                                                                                                  |
+| ---- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | 4      | `OPR1`                                                                                                                                               |
+| 4    | 2      | Versión del generador (u16; 0 si los datos no salen de ahí)                                                                                          |
+| 6    | 2      | Reservado, en 0                                                                                                                                      |
+| 8    | 8      | Id del mercado en ASCII, rellena con ceros (en la bolsa, el id interno de su ficha, de B01 a B12, que no cambia aunque cambien el nombre o la clave) |
+| 16   | 4      | Día de la sesión, aaaammdd (u32)                                                                                                                     |
+| 20   | 4      | Número de operaciones `n` (u32)                                                                                                                      |
+| 24   | 8      | Inicio del tramo, ms UTC, incluido (f64 con valor entero)                                                                                            |
+| 32   | 8      | Fin del tramo, ms UTC, excluido (f64 con valor entero)                                                                                               |
+| 40   | 4      | Precio de la primera operación en ticks (i32; 0 si `n` es 0)                                                                                         |
+| 44   | 4      | Reservado, en 0                                                                                                                                      |
 
 **Operaciones.** Tres columnas seguidas, cada una con `n` enteros en varint (LEB128 sin signo, de 7 en 7 bits):
 
