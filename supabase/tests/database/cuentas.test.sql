@@ -1,8 +1,9 @@
--- Reglas por fila de la F1: perfiles, administrador, avisos, chat, acceso al NQ y borrar la cuenta.
+-- Reglas por fila de la F1: perfiles, administrador, avisos, archivos del NQ y borrar la cuenta.
+-- Sin chat ni acceso al NQ para otras cuentas (docs/decisiones/0011-nq-solo-administrador.md).
 -- Corre con `npm run db:probar` (Supabase local); todo se deshace al terminar.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(40);
+select plan(28);
 
 -- Cuentas de prueba: el correo del administrador entra sin confirmar; Ana y Beto ya confirmados.
 insert into auth.users (id, email, email_confirmed_at) values
@@ -34,12 +35,19 @@ select ok(
 );
 select is((select count(*) from public.administradores), 1::bigint, 'nadie más es administrador');
 
+-- ─── Sin chat ni acceso al NQ ───────────────────────────────────────────────
+
+select hasnt_table('public', 'mensajes', 'el chat ya no existe');
+select hasnt_table('public', 'accesos_nq', 'las solicitudes de acceso al NQ ya no existen');
+select hasnt_function('public', 'pedir_acceso_nq', 'ya no se pide acceso al NQ');
+select hasnt_function('public', 'decidir_acceso_nq', 'ya no se aprueban accesos al NQ');
+select hasnt_function('privado', 'tiene_acceso_nq', 'ya no hay acceso al NQ por cuenta');
+
 -- ─── Sin entrar (anon) ──────────────────────────────────────────────────────
 
 set local role anon;
 select throws_ok('select * from public.perfiles', '42501', null, 'sin entrar no se leen perfiles');
-select throws_ok('select * from public.mensajes', '42501', null, 'sin entrar no se leen mensajes');
-select throws_ok('select public.pedir_acceso_nq()', '42501', null, 'sin entrar no se pide acceso');
+select throws_ok('select * from public.consentimientos', '42501', null, 'sin entrar no se leen avisos aceptados');
 select is(
   (select count(*) from storage.objects where bucket_id = 'nq'),
   0::bigint,
@@ -83,39 +91,10 @@ select throws_ok(
   '42501', null, 'Ana no acepta avisos a nombre de otra cuenta'
 );
 
-select lives_ok(
-  $$ insert into public.mensajes (conversacion, texto) values (auth.uid(), 'Hola, quiero practicar con el NQ') $$,
-  'Ana escribe en su conversación'
-);
-select throws_ok(
-  $$ insert into public.mensajes (conversacion, texto) values ('00000000-0000-0000-0000-00000000000b', 'hola Beto') $$,
-  '42501', null, 'Ana no escribe en la conversación de otra cuenta'
-);
-select throws_ok(
-  $$ insert into public.mensajes (conversacion, tipo) values (auth.uid(), 'aprobado') $$,
-  '42501', null, 'Ana no escribe avisos de acceso en el chat'
-);
-select throws_ok(
-  $$ insert into public.accesos_nq (usuario_id, estado) values (auth.uid(), 'aprobado') $$,
-  '42501', null, 'Ana no se da acceso al NQ'
-);
-select throws_ok(
-  $$ select public.decidir_acceso_nq(auth.uid(), true) $$,
-  '42501', null, 'Ana no aprueba accesos'
-);
-
-select is(public.pedir_acceso_nq(), 'pendiente', 'Ana pide acceso al NQ');
-select is(public.pedir_acceso_nq(), 'pendiente', 'pedir otra vez no repite la solicitud');
-select is(
-  (select count(*) from public.mensajes where tipo = 'solicitud'),
-  1::bigint,
-  'la solicitud queda una sola vez en su chat'
-);
-select is(privado.tiene_acceso_nq(), false, 'con la solicitud pendiente todavía no tiene acceso');
 select is(
   (select count(*) from storage.objects where bucket_id = 'nq'),
   0::bigint,
-  'sin acceso aprobado Ana no ve nada del NQ'
+  'Ana no ve nada del NQ'
 );
 reset role;
 
@@ -123,8 +102,7 @@ reset role;
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}';
-select is((select count(*) from public.mensajes), 0::bigint, 'Beto no ve la conversación de Ana');
-select is((select count(*) from public.accesos_nq), 0::bigint, 'Beto no ve la solicitud de Ana');
+select is((select count(*) from public.consentimientos), 0::bigint, 'Beto no ve los avisos que aceptó Ana');
 select is((select apodo from public.perfiles), null, 'el intento de Ana de cambiar el perfil de Beto no hizo nada');
 reset role;
 
@@ -134,68 +112,22 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-000000000001", "role": "authenticated"}';
 select ok((select count(*) from public.perfiles) >= 3, 'el administrador ve todos los perfiles');
 select is(
-  (select count(*) from public.mensajes where conversacion = '00000000-0000-0000-0000-00000000000a'),
-  2::bigint,
-  'el administrador ve el chat de Ana con su solicitud'
-);
-select is(
-  public.decidir_acceso_nq('00000000-0000-0000-0000-00000000000a', true),
-  'aprobado',
-  'el administrador aprueba a Ana con un clic'
-);
-select is(
-  (select count(*) from public.accesos_nq where estado = 'aprobado'),
+  (select count(*) from storage.objects where bucket_id = 'nq'),
   1::bigint,
-  'el panel cuenta una cuenta con acceso'
+  'el administrador lee los archivos del NQ'
 );
 reset role;
 
--- ─── Ana ya aprobada, Beto sin acceso ───────────────────────────────────────
+-- ─── Borrar la cuenta ───────────────────────────────────────────────────────
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
-select is(
-  (select count(*) from storage.objects where bucket_id = 'nq'),
-  1::bigint,
-  'con acceso aprobado Ana lee los archivos del NQ'
-);
-select ok(
-  exists (select 1 from public.mensajes where tipo = 'aprobado'),
-  'Ana ve en su chat que la aprobaron'
-);
-reset role;
-
-set local role authenticated;
-set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}';
-select is(
-  (select count(*) from storage.objects where bucket_id = 'nq'),
-  0::bigint,
-  'Beto, sin acceso, sigue sin ver nada del NQ'
-);
-reset role;
-
--- ─── Retirar el acceso y borrar la cuenta ───────────────────────────────────
-
-set local role authenticated;
-set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-000000000001", "role": "authenticated"}';
-select public.decidir_acceso_nq('00000000-0000-0000-0000-00000000000a', false);
-reset role;
-
-set local role authenticated;
-set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
-select is(
-  (select count(*) from storage.objects where bucket_id = 'nq'),
-  0::bigint,
-  'si el administrador rechaza, Ana deja de ver el NQ'
-);
 select lives_ok($$ select public.borrar_mi_cuenta() $$, 'Ana borra su cuenta');
 reset role;
 
 select is(
-  (select count(*) from public.mensajes where conversacion = '00000000-0000-0000-0000-00000000000a')
-    + (select count(*) from public.perfiles where id = '00000000-0000-0000-0000-00000000000a')
+  (select count(*) from public.perfiles where id = '00000000-0000-0000-0000-00000000000a')
     + (select count(*) from public.consentimientos where usuario_id = '00000000-0000-0000-0000-00000000000a')
-    + (select count(*) from public.accesos_nq where usuario_id = '00000000-0000-0000-0000-00000000000a')
     + (select count(*) from auth.users where id = '00000000-0000-0000-0000-00000000000a'),
   0::bigint,
   'al borrar la cuenta no queda nada de Ana'

@@ -6,7 +6,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 
 ### Agregado
 
-- Versión web para Cloudflare Pages: la práctica corre con un mercado de mentira y un aviso, mientras llega el acceso al NQ por cuenta.
+- Versión web para Cloudflare Pages: la práctica corre con un mercado de mentira y un aviso, mientras llega la bolsa de Stunks.
 - Publicación en https://stunks.pages.dev: `main` se publica sola y cada PR tiene su vista previa. Con esto queda lista la F0.
 - Dirección propia: https://stunks.app.
 - Cuentas: entrar con Google o con un link al correo, sin contraseñas; elegir apodo, salir y borrar la cuenta con todo lo suyo.
@@ -15,6 +15,7 @@ Formato de [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versione
 
 ### Cambiado
 
+- Las cuentas ya no tienen chat ni piden acceso al NQ: el NQ queda solo para el administrador. Los avisos de privacidad y de grabación cambian de versión y la app los vuelve a pedir; el de grabación dice que llega con el Reto diario.
 - La web publicada ya no muestra la prueba técnica ni puede pedir datos a Kraken o Coinbase; en local sigue igual.
 - Toda la app cambia de idioma con el botón ES/EN, también la práctica: textos, avisos, fechas y lo que se dibuja en las gráficas. Sin elección guardada, arranca en el idioma del navegador.
 

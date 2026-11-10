@@ -1,8 +1,8 @@
 // Versiones vigentes de los avisos (public/privacidad.html y public/grabacion.html).
 // Al cambiar un aviso se sube su versión aquí y en la página, y la app vuelve a pedir aceptarlo.
 export const AVISOS = {
-  privacidad: '2026-11-06',
-  grabacion: '2026-11-06',
+  privacidad: '2026-11-09',
+  grabacion: '2026-11-09',
 } as const
 
 export type Documento = keyof typeof AVISOS

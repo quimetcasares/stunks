@@ -50,7 +50,7 @@ Atajos: Espacio play/pausa · → una vela · C comprar · V vender · X cerrar.
 
 ### Base de datos
 
-Cuentas, chat y acceso al NQ viven en Supabase ([decisión 0008](docs/decisiones/0008-cuentas.md)). En local, `npm run db:iniciar` levanta un Supabase con Docker y aplica las migraciones de `supabase/migrations/`; `npm run db:probar` corre las pruebas de reglas por fila.
+Las cuentas y sus avisos aceptados viven en Supabase ([decisión 0008](docs/decisiones/0008-cuentas.md)); el chat y el acceso al NQ para otras cuentas salieron ([decisión 0011](docs/decisiones/0011-nq-solo-administrador.md)). En local, `npm run db:iniciar` levanta un Supabase con Docker y aplica las migraciones de `supabase/migrations/`; `npm run db:probar` corre las pruebas de reglas por fila.
 
 Producción solo cambia con migraciones: en cada PR que toca `supabase/migrations/`, el workflow `Migraciones` muestra qué se aplicaría, y al fusionar en `main` las aplica. Nada se cambia a mano en la base de producción.
 
