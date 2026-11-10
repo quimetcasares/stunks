@@ -1,6 +1,6 @@
 # 0009 · Avisos de privacidad y de grabación
 
-**Estado:** vigente · **Fecha:** 2026-11-06
+**Estado:** vigente; la grabación llega con el Reto diario (F4), no con la F5 · **Fecha:** 2026-11-06
 
 ## Contexto
 
