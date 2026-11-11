@@ -1,8 +1,8 @@
--- Caché de la bolsa y límite de 120 días por hora por cuenta.
+-- Caché de la bolsa, límite de 120 días por hora y de 3,000 tramos por hora por cuenta.
 -- Corre con `npm run db:probar` (Supabase local); todo se deshace al terminar.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(19);
 
 insert into auth.users (id, email, email_confirmed_at) values
   ('00000000-0000-0000-0000-00000000000a', 'ana@example.com', now()),
@@ -56,6 +56,39 @@ select is(
   (select count(*) from privado.peticiones_bolsa where usuario_id = '00000000-0000-0000-0000-00000000000b'),
   0::bigint,
   'al borrar la cuenta se borra su conteo'
+);
+
+-- Tramos (0013): su propio conteo y su límite de 3,000 por hora.
+set local role anon;
+select throws_ok('select public.pedir_tramo_bolsa()', '42501', null, 'sin entrar no se piden tramos');
+reset role;
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
+select is(public.pedir_tramo_bolsa(), true, 'Ana pide su primer tramo');
+select throws_ok('select * from privado.tramos_bolsa', '42501', null, 'Ana no lee la tabla de tramos');
+reset role;
+
+select is(
+  (select cuenta from privado.tramos_bolsa where usuario_id = '00000000-0000-0000-0000-00000000000a'),
+  1,
+  'el tramo cuenta aparte de los días'
+);
+
+update privado.tramos_bolsa set cuenta = 2999 where usuario_id = '00000000-0000-0000-0000-00000000000a';
+insert into privado.tramos_bolsa (usuario_id, hora, cuenta)
+  values ('00000000-0000-0000-0000-00000000000a', date_trunc('hour', now()) - interval '2 days', 50);
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}';
+select is(public.pedir_tramo_bolsa(), true, 'el tramo 3,000 de la hora todavía entra');
+select is(public.pedir_tramo_bolsa(), false, 'el 3,001 ya no');
+reset role;
+
+select is(
+  (select count(*) from privado.tramos_bolsa where usuario_id = '00000000-0000-0000-0000-00000000000a'),
+  1::bigint,
+  'las horas de tramos de hace más de un día se borran'
 );
 
 select * from finish();

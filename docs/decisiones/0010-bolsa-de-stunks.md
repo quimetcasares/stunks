@@ -1,6 +1,6 @@
 # 0010 · La bolsa de Stunks
 
-**Estado:** vigente; los nombres de los mercados, el Peso y cuándo se congela la v1 cambian con la [0012](0012-publico-eeuu.md) · **Fecha:** 2026-11-09 · **Reemplaza:** la [0002](0002-fuentes-cripto.md)
+**Estado:** vigente; los nombres de los mercados, el Peso y cuándo se congela la v1 cambian con la [0012](0012-publico-eeuu.md), y la entrega y el límite por cuenta con la [0013](0013-bolsa-por-tramos.md) · **Fecha:** 2026-11-09 · **Reemplaza:** la [0002](0002-fuentes-cripto.md)
 
 ## Contexto
 
