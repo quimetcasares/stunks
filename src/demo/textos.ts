@@ -63,7 +63,7 @@ export const T = {
   nickHelp: '3 to 16 letters, numbers, spaces or . _ -',
   nickPlaceholder: 'Nickname',
   nickSave: 'Save',
-  nickSaved: (n: string) => `Saved as ${n}.`,
+  nickSaved: (n: string) => `Saved as ${n}. It can take up to a minute to show up in the table.`,
   nickErrors: {
     invalido: 'Use 3 to 16 letters, numbers, spaces or . _ -',
     prohibido: 'That nickname is not allowed.',

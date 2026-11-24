@@ -85,6 +85,8 @@ export function Final({ resultados, revelacion, esReto, rankedPendiente, onLibre
       await ponerApodo(apodo.trim())
       setMsg(T.nickSaved(apodo.trim()))
       void recargar()
+      // Las tablas se calculan cada 30 s en la base: se vuelve a mirar una vez cuando ya habrán cambiado.
+      setTimeout(() => void recargar(), 32_000)
     } catch (e) {
       setMsg(T.nickErrors[e instanceof ErrorDemo ? e.codigo : ''] ?? T.error)
     }
