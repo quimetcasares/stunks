@@ -12,7 +12,7 @@ export const T = {
   free: 'Free play',
   rankedDesc: 'Today’s 10 charts, the same for everyone. One run a day. Counts for the leaderboard.',
   freeDesc: 'Random charts, as many as you like. Just for fun: it does not count for the leaderboard.',
-  playFree: 'Play Free play',
+  playFree: 'Try Free play',
   playRanked: 'Play today’s Ranked',
   another10: 'Another 10 charts',
   freeNote: 'Free play does not count for the leaderboard.',
