@@ -2,7 +2,7 @@
 -- Corre con `npm run db:probar` (Supabase local); todo se deshace al terminar.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(37);
 
 -- ─── Sin grupo activo ────────────────────────────────────────────────────────────────────────────────────────────────
 select is(public.demo_servir('j1', 'reto', 0) ->> 'estado', 'sin-grupo', 'sin grupo activo no hay gráfica');
@@ -144,6 +144,17 @@ select is(
   'al pasar el día, las 10 del reto anterior se suman a las 100 de reserva'
 );
 update privado.demo_grupos set inicia = inicia + 1 where grupo = 'prueba';
+
+-- El juego libre no espera: ni espera_ms ni 'pronto' aunque se pida un mínimo enorme (el mínimo es solo del reto).
+select is((public.demo_servir('j5', 'libre', 100000) ->> 'espera_ms')::int, 0, 'el juego libre no trae espera');
+select is(
+  public.demo_responder((select ronda from privado.demo_rondas where jugador = 'j5'), 'j5', 'real', 100000) ->> 'estado', 'ok',
+  'y se contesta al instante'
+);
+select is(
+  (select extract(epoch from respondida_en - servida_en) >= 0 from privado.demo_rondas where jugador = 'j5'), true,
+  'pero se guarda cuánto tardó'
+);
 
 -- ─── Reserva agotada ─────────────────────────────────────────────────────────────────────────────────────────────────
 delete from privado.demo_ventanas where reto_dia is null;
