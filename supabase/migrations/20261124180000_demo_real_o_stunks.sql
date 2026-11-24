@@ -41,6 +41,8 @@ create table privado.demo_rondas (
   dijo text check (dijo in ('real', 'stunks')),
   acerto boolean,
   pista text check (pista in ('mechas', 'volumen', 'brincos', 'limpia', 'nose')),
+  -- Número de corrida de Ranked de la huella de IP de ese día cuando se empezó esta corrida (1 = la primera). Sin IP ni hash.
+  huella_n integer,
   check ((modo = 'reto') = (reto_fecha is not null)),
   check ((respondida_en is null) = (dijo is null)),
   unique (jugador, ventana_id)
@@ -57,13 +59,33 @@ create table privado.demo_limite (
   primary key (ip_hash, hora)
 );
 
+-- Parámetros que decide Joaquín. tope_corridas_ip: cuántas corridas de Ranked (el reto del día) puede empezar una misma huella de IP en
+-- un día; 0 = sin tope. El valor por omisión es generoso a propósito, para no castigar a una oficina, una escuela o una casa con
+-- varias personas detrás de la misma IP.
+create table privado.demo_config (clave text primary key, valor integer not null);
+insert into privado.demo_config (clave, valor) values ('tope_corridas_ip', 50);
+
+-- Cuántas corridas de Ranked ha empezado cada huella de IP (el hash que cambia cada día). No se guarda la IP ni la huella junto a
+-- las respuestas: en `demo_rondas` solo queda el número de corrida de esa huella (huella_n). Las filas se borran a las 24 horas.
+create table privado.demo_corridas_ip (
+  ip_hash text primary key,
+  desde timestamptz not null default now(),
+  corridas integer not null default 0
+);
+create index demo_corridas_ip_desde on privado.demo_corridas_ip (desde);
+create index demo_limite_hora on privado.demo_limite (hora);
+
+alter table privado.demo_config enable row level security;
+alter table privado.demo_corridas_ip enable row level security;
 alter table privado.demo_grupos enable row level security;
 alter table privado.demo_ventanas enable row level security;
 alter table privado.demo_rondas enable row level security;
 alter table privado.demo_limite enable row level security;
-revoke all on privado.demo_grupos, privado.demo_ventanas, privado.demo_rondas, privado.demo_limite from public, anon, authenticated;
+revoke all on privado.demo_grupos, privado.demo_ventanas, privado.demo_rondas, privado.demo_limite, privado.demo_config, privado.demo_corridas_ip
+  from public, anon, authenticated;
 
--- Cuenta una llamada de esta IP (hash) y dice si sigue dentro de `p_max` por hora. Las horas de más de un día se borran.
+-- Cuenta una llamada de esta IP (hash) y dice si sigue dentro de `p_max` por hora. Las horas de más de 24 horas se borran en cada
+-- llamada (como mucho quedan 25 horas de la última llamada de una huella, y solo si nadie vuelve a llamar al servicio).
 create function public.demo_limite(p_ip_hash text, p_max integer)
 returns boolean
 language plpgsql
@@ -77,9 +99,8 @@ begin
   insert into privado.demo_limite as l (ip_hash, hora, cuenta) values (p_ip_hash, ahora, 1)
   on conflict (ip_hash, hora) do update set cuenta = l.cuenta + 1
   returning l.cuenta into n;
-  if n = 1 then
-    delete from privado.demo_limite where hora < ahora - interval '1 day';
-  end if;
+  -- En cada llamada, no solo cuando entra una fila nueva: así el hash de una IP no dura más de un día mientras haya visitas.
+  delete from privado.demo_limite where hora < ahora - interval '24 hours';
   return n <= p_max;
 end;
 $$;
@@ -90,7 +111,7 @@ $$;
 --   'libre': tandas de 10 con 5 reales y 5 de Stunks y sin dos parejas juntas, de la reserva y de los retos de días ya pasados
 --            (nunca las de hoy ni las de días futuros), sin repetir ninguna que el jugador ya vio.
 -- Si ya hay una ronda sin contestar de ese modo, vuelve a entregar la misma (recargar la página no regala otra gráfica).
-create function public.demo_servir(p_jugador text, p_modo text, p_min_ms integer)
+create function public.demo_servir(p_jugador text, p_modo text, p_min_ms integer, p_ip_hash text default null)
 returns jsonb
 language plpgsql
 security definer
@@ -107,6 +128,9 @@ declare
   stunks integer;
   pares integer[];
   quiero text;
+  huella integer;
+  cuenta integer;
+  tope integer;
 begin
   if p_modo not in ('reto', 'libre') then
     raise exception 'modo inválido' using errcode = '22023';
@@ -137,8 +161,25 @@ begin
     if not found then
       return jsonb_build_object('estado', 'sin-reto');
     end if;
-    insert into privado.demo_rondas (jugador, ventana_id, modo, reto_fecha, n)
-      values (p_jugador, v.id, 'reto', hoy, hechas + 1) returning * into r;
+    -- Corrida nueva: cuenta contra el tope de corridas por huella de IP y día (parámetro; 0 = sin tope). Las demás rondas de la
+    -- corrida heredan el número de corrida de la primera.
+    if hechas = 0 then
+      delete from privado.demo_corridas_ip where desde < now() - interval '24 hours';
+      if p_ip_hash is not null then
+        insert into privado.demo_corridas_ip (ip_hash) values (p_ip_hash) on conflict (ip_hash) do nothing;
+        select corridas into cuenta from privado.demo_corridas_ip where ip_hash = p_ip_hash for update;
+        tope := coalesce((select valor from privado.demo_config where clave = 'tope_corridas_ip'), 0);
+        if tope > 0 and cuenta >= tope then
+          return jsonb_build_object('estado', 'tope');
+        end if;
+        update privado.demo_corridas_ip set corridas = corridas + 1 where ip_hash = p_ip_hash;
+        huella := cuenta + 1;
+      end if;
+    else
+      select huella_n into huella from privado.demo_rondas where jugador = p_jugador and modo = 'reto' and reto_fecha = hoy and n = 1;
+    end if;
+    insert into privado.demo_rondas (jugador, ventana_id, modo, reto_fecha, n, huella_n)
+      values (p_jugador, v.id, 'reto', hoy, hechas + 1, huella) returning * into r;
   else
     select count(*) into hechas from privado.demo_rondas where jugador = p_jugador and modo = 'libre';
     hechas := hechas % 10; -- lugar dentro de la tanda de 10
@@ -232,10 +273,10 @@ end;
 $$;
 
 revoke all on function public.demo_limite(text, integer) from public, anon, authenticated;
-revoke all on function public.demo_servir(text, text, integer) from public, anon, authenticated;
+revoke all on function public.demo_servir(text, text, integer, text) from public, anon, authenticated;
 revoke all on function public.demo_responder(uuid, text, text, integer) from public, anon, authenticated;
 revoke all on function public.demo_pista(uuid, text, text) from public, anon, authenticated;
 grant execute on function public.demo_limite(text, integer) to service_role;
-grant execute on function public.demo_servir(text, text, integer) to service_role;
+grant execute on function public.demo_servir(text, text, integer, text) to service_role;
 grant execute on function public.demo_responder(uuid, text, text, integer) to service_role;
 grant execute on function public.demo_pista(uuid, text, text) to service_role;
