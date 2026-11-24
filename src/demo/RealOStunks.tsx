@@ -8,7 +8,7 @@ import { GraficaVelas } from './GraficaVelas'
 import { T } from './textos'
 import './demo.css'
 
-type Vacio = 'sin-grupo' | 'sin-reto' | 'terminado' | 'agotado'
+type Vacio = 'sin-grupo' | 'sin-reto' | 'terminado' | 'agotado' | 'tope'
 type Fase =
   | { t: 'cargando' }
   | { t: 'error'; codigo: string }
@@ -200,7 +200,9 @@ export default function RealOStunks() {
                   ? T.noChallenge
                   : fase.estado === 'terminado'
                     ? T.alreadyPlayed
-                    : T.soldOut}
+                    : fase.estado === 'tope'
+                      ? T.rankedCap
+                      : T.soldOut}
             </p>
             {fase.estado !== 'sin-grupo' && fase.estado !== 'agotado' && (
               <button type="button" className="rs-prim" onClick={() => cambiarModo('libre')}>

@@ -239,3 +239,45 @@ test('Free play: sin espera, no cuenta para la tabla y ofrece volver a Ranked', 
   await expect(page.getByTestId('rs-ir-ranked')).toBeVisible()
   expect(pedidos).not.toContain('agregado-libre')
 })
+
+test('la liga trae sus etiquetas og: y de Twitter en el HTML estático (los robots no ejecutan JavaScript)', async ({
+  request,
+}) => {
+  const html = await (await request.get('/real-or-stunks')).text()
+  for (const esperado of [
+    '<title>Real or Stunks? · Stunks</title>',
+    'property="og:title" content="Real or Stunks? Can you tell real ETH from a made-up market?"',
+    'property="og:description"',
+    'property="og:url" content="https://stunks.app/real-or-stunks"',
+    'property="og:image" content="https://stunks.app/og-real-or-stunks.png"',
+    'property="og:image:width" content="1200"',
+    'name="twitter:card" content="summary_large_image"',
+    'name="twitter:image" content="https://stunks.app/og-real-or-stunks.png"',
+    'rel="canonical" href="https://stunks.app/real-or-stunks"',
+  ])
+    expect(html).toContain(esperado)
+  // Sin spoilers: ninguna etiqueta dice cuál es la respuesta ni nombra la fuente.
+  expect(html).not.toMatch(/dydx|hyperliquid|ethereal|ETR/i)
+  // La portada de Stunks no se contagia de las etiquetas de la demo.
+  const portada = await (await request.get('/')).text()
+  expect(portada).not.toContain('og:title')
+  // La imagen existe, es PNG y mide lo que dicen las etiquetas.
+  const img = await request.get('/og-real-or-stunks.png')
+  expect(img.status()).toBe(200)
+  expect(img.headers()['content-type']).toContain('image/png')
+  const bytes = await img.body()
+  expect(bytes.subarray(1, 4).toString()).toBe('PNG')
+  expect(bytes.readUInt32BE(16)).toBe(1200)
+  expect(bytes.readUInt32BE(20)).toBe(630)
+})
+
+test('si la huella de IP ya llegó al tope de corridas de Ranked, lo dice y ofrece Free play', async ({ page }) => {
+  await page.route('**/functions/v1/demo/**', async (route) => {
+    const h = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: h })
+    return route.fulfill({ contentType: 'application/json', headers: h, body: JSON.stringify({ estado: 'tope' }) })
+  })
+  await page.goto('/real-or-stunks')
+  await expect(page.getByText('Too many Ranked runs have started from your network today')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Try Free play' })).toBeVisible()
+})

@@ -39,6 +39,7 @@ export const T = {
   alreadyPlayed: 'You already played today’s Ranked run.',
   noChallenge: 'No Ranked run today. Try Free play.',
   soldOut: 'You have seen every chart in this round. A new round is coming.',
+  rankedCap: 'Too many Ranked runs have started from your network today. Free play is always open, and Ranked resets tomorrow.',
   noGroup: 'The game is not open yet. Come back soon.',
   loading: 'Loading…',
   error: 'Something went wrong. Check your connection and try again.',

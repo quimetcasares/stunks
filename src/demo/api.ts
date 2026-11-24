@@ -24,7 +24,7 @@ export interface Ronda {
   velas: Velas
 }
 export type Servida = { estado: 'ok' } & Ronda
-export type SinRonda = { estado: 'sin-grupo' | 'sin-reto' | 'terminado' | 'agotado' }
+export type SinRonda = { estado: 'sin-grupo' | 'sin-reto' | 'terminado' | 'agotado' | 'tope' }
 
 export class ErrorDemo extends Error {
   readonly codigo: string
