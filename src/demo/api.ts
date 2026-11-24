@@ -24,7 +24,17 @@ export interface Ronda {
   velas: Velas
 }
 export type Servida = { estado: 'ok' } & Ronda
-export type SinRonda = { estado: 'sin-grupo' | 'sin-reto' | 'terminado' | 'agotado' }
+/** Lo que se revela de un Ranked terminado: las 10, en orden, solo al final. */
+export interface Revelacion {
+  n: number
+  acerto: boolean
+  era: Fuente
+}
+export type SinRonda =
+  | { estado: 'sin-grupo' | 'sin-reto' | 'agotado' | 'tope' }
+  | { estado: 'terminado'; revelacion?: Revelacion[] }
+/** Free play: acerto y era al instante. Ranked: solo "recibida", y con la décima las 10 juntas. */
+export type Respuesta = { acerto: boolean; era: Fuente } | { recibida: true; n: number; revelacion?: Revelacion[] }
 
 export class ErrorDemo extends Error {
   readonly codigo: string
@@ -69,6 +79,27 @@ async function llamar<T>(ruta: string, init?: RequestInit): Promise<T> {
 
 export const pedirRonda = (modo: Modo) => llamar<Servida | SinRonda>(`ronda?modo=${modo}`)
 export const responder = (ronda: string, dijo: Fuente) =>
-  llamar<{ acerto: boolean; era: Fuente }>('respuesta', { method: 'POST', body: JSON.stringify({ ronda, dijo }) })
+  llamar<Respuesta>('respuesta', { method: 'POST', body: JSON.stringify({ ronda, dijo }) })
 export const enviarPista = (ronda: string, pista: Pista) =>
   llamar<{ ok: true }>('pista', { method: 'POST', body: JSON.stringify({ ronda, pista }) })
+
+export interface Agregado {
+  comun: {
+    total: number
+    aciertos: number
+    jugadores: number
+    hoy_total: number
+    hoy_aciertos: number
+    tabla_hoy: { apodo: string; aciertos: number; segundos: number }[]
+    tabla: { apodo: string; aciertos: number; total: number }[]
+  }
+  tu: {
+    aciertos: number
+    total: number
+    apodo: string | null
+    lugar: number | null
+    reto?: { aciertos: number; mejor_que: number | null; jugaron: number; numero: number }
+  }
+}
+export const pedirAgregado = () => llamar<Agregado>('agregado')
+export const ponerApodo = (apodo: string) => llamar<{ ok: true }>('apodo', { method: 'POST', body: JSON.stringify({ apodo }) })

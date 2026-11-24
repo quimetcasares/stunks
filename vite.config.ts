@@ -24,7 +24,7 @@ const paginasSueltas = (): Plugin => ({
   name: 'paginas-sueltas',
   configureServer(server) {
     server.middlewares.use((req, _res, next) => {
-      const m = req.url?.match(/^\/(privacidad|grabacion)\/?(\?.*)?$/)
+      const m = req.url?.match(/^\/(privacidad|grabacion|real-or-stunks)\/?(\?.*)?$/)
       if (m) req.url = `/${m[1]}.html${m[2] ?? ''}`
       next()
     })
@@ -45,6 +45,11 @@ export default defineConfig(({ mode }) => {
       outDir: archivo ? 'dist-archivo' : practica ? 'practica/app' : 'dist',
       emptyOutDir: true,
       target: 'es2022',
+      // La demo "Real or Stunks?" tiene su propio HTML (real-or-stunks.html) con etiquetas og: y de Twitter propias: los robots de
+      // Reddit y X no ejecutan JavaScript, así que solo ven lo que trae el HTML estático de esa ruta. Cloudflare Pages sirve
+      // /real-or-stunks desde real-or-stunks.html (igual que /privacidad). El archivo y la práctica usan un solo HTML.
+      rollupOptions:
+        archivo || practica ? undefined : { input: { main: resolve('index.html'), demo: resolve('real-or-stunks.html') } },
     },
     server: { port: 5173, open: !process.env.STUNKS_E2E },
   }
