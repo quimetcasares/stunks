@@ -34,7 +34,9 @@ export const T = {
   retry: 'Try again',
   limit: 'Too many requests from your network. Wait a bit and try again.',
   footer: 'Real data: public order-book trades from an open blockchain. Made-up data: the Stunks simulator.',
-  privacy: 'No sign-up. We keep a random anonymous id and your answers. No email, and your IP address is never stored.',
+  privacy:
+    'No sign-up. We keep a random anonymous id and your answers, and no email. We never save your IP address, only a scrambled version that expires in a day, to stop abuse. For adults only (18+).',
+  privacyLink: 'Privacy notice',
   about: 'About Stunks',
   countRule: (n: number) => `Only answers that took at least ${n} seconds count here.`,
   everyone: (pct: string, total: string) => `Everyone so far: ${pct} right · ${total} answers`,

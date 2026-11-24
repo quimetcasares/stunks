@@ -247,7 +247,7 @@ export default function RealOStunks() {
         <p>{T.footer}</p>
         <p>{T.privacy}</p>
         <p>
-          <a href="/">{T.about}</a>
+          <a href="/privacidad">{T.privacyLink}</a> · <a href="/">{T.about}</a>
         </p>
       </footer>
     </div>
