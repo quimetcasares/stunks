@@ -10,13 +10,13 @@ Para que cualquiera pueda jugar hace falta una contraparte real que se pueda mos
 
 ## Decisión
 
-- La demo muestra solo cripto: ventanas de 60 velas de 5 minutos (cinco horas) de ETH de un libro de órdenes en una cadena pública, contra ventanas de Ethereal (ETR), el mercado inventado de la Bolsa. El ETH real es de 2024 (enero a agosto y noviembre, los meses en que ese libro tuvo flujo suficiente), no de hoy. Un pool de liquidez automático se descartó: su precio avanza a escalones y las velas reales casi no tienen mechas, así que se nota a simple vista.
+- La demo muestra solo cripto: ventanas de 60 velas de 5 minutos (cinco horas) de ETH de un libro de órdenes en una cadena pública, contra ventanas de Ethereal (ETR), el mercado inventado de la Bolsa. El ETH real es de 2024 (enero a agosto y noviembre, los meses en que ese libro tuvo flujo suficiente), no de hoy. Un creador de mercado automático (AMM) se descartó: su precio avanza a escalones y las velas reales casi no tienen mechas, así que se nota a simple vista.
 - Las velas reales se arman una vez, fuera del repositorio, a partir de las operaciones públicas de la cadena. Lo que llega al navegador son velas derivadas: sin fechas, sin niveles de precio (todo relativo a la primera apertura), sin el nombre del intercambio ni del activo en la ventana, y con el volumen en escala relativa.
 - Cada ventana real se empareja con una de ETR del mismo año (2024), la misma hora de arranque y la misma clase de día (entre semana o fin de semana). Las dos salen con el mismo formato y por la misma ruta.
 - La respuesta se revisa en el servidor: el navegador nunca recibe cuál es cuál antes de contestar, y el tiempo mínimo viendo lo cuenta el servidor.
-- Antes de abrirla, una prueba privada con 100 respuestas del dueño del proyecto debe quedar entre 40% y 60% de aciertos, la misma regla de las pruebas a ciegas de la Bolsa. Si queda fuera, la demo espera hasta que ETR se arregle con cifras públicas.
+- La demo pública es la prueba: se abre como experimento y la página muestra el porcentaje de aciertos de todos (solo respuestas con el tiempo mínimo cumplido). Si queda fuera de 40% a 60%, no es una falla de la demo sino el resultado, y se publica tal cual. La prueba privada de 100 respuestas del dueño del proyecto dejó de ser la puerta (decisión del 23-nov-2026).
 - No hay datos del NQ, del CME ni de ningún exchange centralizado en la demo, en el repositorio ni en la web. No hay premios.
-- Juego abierto, sin cuenta, con apodo. No se guarda la IP.
+- Juego abierto, sin cuenta ni correo, con apodo. La IP no se guarda en claro: solo un hash para el límite de uso.
 
 ## Consecuencias
 
@@ -24,4 +24,4 @@ Para que cualquiera pueda jugar hace falta una contraparte real que se pueda mos
 - Las velas reales no se suben al repositorio. Las ventanas de ETR salen del generador, que sigue privado.
 - Ajustar ETR para acercarlo a ETH solo se hace con cifras públicas, y la prueba privada usa un periodo distinto al que sirvió de diagnóstico.
 - La demo no obliga a congelar la v1: sus ventanas son un grupo fijo prearmado, no días publicados.
-- La interfaz de la demo y su revisión de respuestas se construyen en las etapas que siguen a la prueba privada, cada una en su propio cambio.
+- La interfaz de la demo y su revisión de respuestas se construyen cada una en su propio cambio.
