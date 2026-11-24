@@ -6,9 +6,7 @@ const r = [true, false, true, true, false, true, true, true, false, true]
 describe('tarjeta sin spoilers', () => {
   it('el texto lleva puntaje, cuadritos y la dirección, y nada más', () => {
     const t = textoParaCompartir(r, 12, 'https://stunks.app/real-or-stunks')
-    expect(t).toBe(
-      `Real or Stunks? #12 7/10\n🟩🟥🟩🟩🟥🟩🟩🟩🟥🟩\nCan you tell real ETH from a made-up market?\nhttps://stunks.app/real-or-stunks`,
-    )
+    expect(t).toBe(`Real or Stunks? #12 7/10\n🟩🟥🟩🟩🟥🟩🟩🟩🟥🟩\nCan you beat my score?\nhttps://stunks.app/real-or-stunks`)
     expect(cuadritos([true, false])).toBe('🟩🟥')
   })
   it('sin número de reto no inventa uno', () => {

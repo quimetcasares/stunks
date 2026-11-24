@@ -48,13 +48,13 @@ const html = `<!doctype html><html><body style="margin:0;background:#131722">
   <rect x="40" y="190" width="1120" height="330" rx="14" fill="#161b28" stroke="#2a2e39" stroke-width="2"/>
   ${cuerpos}
   <text x="70" y="98" font-size="74" font-weight="800" fill="#f0f3fa">Real or Stunks?</text>
-  <text x="72" y="148" font-size="31" fill="#b2b5be">Can you tell real ETH from a made-up market?</text>
+  <text x="72" y="148" font-size="31" fill="#b2b5be">Think you can spot a fake market?</text>
   <rect x="40" y="548" width="540" height="62" rx="14" fill="#1e222d" stroke="#089981" stroke-width="4"/>
   <text x="310" y="591" font-size="34" font-weight="800" fill="#f0f3fa" text-anchor="middle">Real</text>
   <rect x="620" y="548" width="540" height="62" rx="14" fill="#1e222d" stroke="#ffc531" stroke-width="4"/>
   <text x="890" y="591" font-size="34" font-weight="800" fill="#f0f3fa" text-anchor="middle">Stunks</text>
   <text x="1160" y="60" font-size="30" font-weight="800" fill="#ffc531" text-anchor="end">stunks.app</text>
-  <text x="1160" y="100" font-size="24" fill="#787b86" text-anchor="end">10 charts a day · no sign-up</text>
+  <text x="1160" y="100" font-size="24" fill="#787b86" text-anchor="end">10 charts · One attempt · No sign-up</text>
 </svg></body></html>`
 
 const nav = await chromium.launch()

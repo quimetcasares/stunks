@@ -56,13 +56,15 @@ export default function RealOStunks() {
   const [fase, setFase] = useState<Fase>({ t: 'cargando' })
   const [resultados, setResultados] = useState<boolean[]>([])
   const [revelacion, setRevelacion] = useState<Revelacion[]>([])
+  // Segundos mínimos por gráfica en Ranked, tal como los dice el servidor en la primera ronda (se avisa antes de empezar).
+  const [minRanked, setMinRanked] = useState(0)
   const [ahora, setAhora] = useState(Date.now())
   const inicial = useRef(modo)
   const activo = useRef(true)
   const { a: agregado } = useAgregado(fase.t !== 'puntaje')
 
   useEffect(() => {
-    document.title = `${T.title} · Stunks`
+    document.title = T.pageTitle
     document.documentElement.lang = 'en'
     activo.current = true
     return () => {
@@ -76,6 +78,7 @@ export default function RealOStunks() {
       const x = await pedirRonda(m)
       if (!activo.current) return
       if (x.estado === 'ok') {
+        if (x.modo === 'reto' && x.espera_ms > 0) setMinRanked((v) => Math.max(v, Math.round(x.espera_ms / 1000)))
         setFase({ t: 'jugando', r: x, listoEn: Date.now() + x.espera_ms, espera: x.espera_ms, enviando: false })
       } else if (x.estado === 'terminado' && m === 'reto') {
         // El servidor trae las 10 para poder mostrarlas otra vez; si no, las guardadas en este navegador.
@@ -189,13 +192,16 @@ export default function RealOStunks() {
         </div>
       </header>
       <p className="rs-modo-desc" data-testid="rs-modo-desc">
-        {modo === 'reto' ? T.rankedDesc : T.freeDesc}
+        {modo === 'reto' ? `${T.rankedDesc}${minRanked > 0 ? ` ${T.rankedWait(minRanked)}` : ''}` : T.freeDesc}
       </p>
 
       {modo === 'reto' && <Marcador a={agregado} />}
 
       <main className="rs-main">
         <h1 className="rs-titulo">{T.title}</h1>
+        <p className="rs-pregunta-principal" data-testid="rs-pregunta">
+          {T.question}
+        </p>
         {enJuego && rActual ? (
           <>
             <p className="rs-prog" data-testid="rs-prog">
@@ -204,7 +210,11 @@ export default function RealOStunks() {
             <GraficaVelas velas={rActual.velas} />
           </>
         ) : (
-          <p className="rs-sub">{T.tagline}</p>
+          <p className="rs-sub">
+            {T.subtitle}
+            <br />
+            {T.subtitle2}
+          </p>
         )}
 
         {fase.t === 'cargando' && <p className="rs-msg">{T.loading}</p>}

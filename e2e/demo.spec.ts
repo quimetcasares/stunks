@@ -58,7 +58,7 @@ test('se juega el reto: primera gráfica sin pantalla previa, botones tras el m�
   await expect(page.getByTestId('rs-prog')).toHaveText('Chart 1 of 10')
   // Ranked se abre primero y lo dice la página.
   await expect(page.getByTestId('rs-modo-reto')).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByTestId('rs-modo-desc')).toContainText('Today’s 10 charts')
+  await expect(page.getByTestId('rs-modo-desc')).toContainText('10 charts. One attempt.')
   // Antes del mínimo los botones no se pueden tocar y no hay resultado a la vista.
   await expect(page.getByTestId('rs-real')).toBeDisabled()
   await expect(page.getByTestId('rs-resultado')).toHaveCount(0)
@@ -67,7 +67,7 @@ test('se juega el reto: primera gráfica sin pantalla previa, botones tras el m�
   await page.getByTestId('rs-real').click()
   await expect(page.getByTestId('rs-guardada')).toContainText('Answer locked in.')
   // En Ranked no se dice si acertó ni qué era: ni palabras de veredicto ni de la fuente.
-  await expect(page.getByText(/Correct!|Not quite|That was real|That was a Stunks market/)).toHaveCount(0)
+  await expect(page.getByText(/Correct!|Wrong!|That was real ETH|That was simulated/)).toHaveCount(0)
   await page.getByRole('button', { name: 'Wicks' }).click()
   await expect(page.getByTestId('rs-guardada')).toContainText('Thanks!')
   await page.getByTestId('rs-siguiente').click()
@@ -153,7 +153,7 @@ test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marca
   })
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto('/real-or-stunks')
-  await expect(page.getByTestId('rs-marcador')).toContainText('Ranked so far: 48.6% right')
+  await expect(page.getByTestId('rs-marcador')).toContainText('Community accuracy: 48.6%')
   for (let i = 1; i <= 10; i++) {
     await expect(page.getByTestId('rs-prog')).toHaveText(`Chart ${i} of 10`)
     await expect(page.getByTestId('rs-real')).toBeEnabled()
@@ -235,7 +235,7 @@ test('Free play: sin espera, no cuenta para la tabla y ofrece volver a Ranked', 
   // Ranked trae 5 s de espera: los botones están bloqueados.
   await expect(page.getByTestId('rs-real')).toBeDisabled()
   await page.getByTestId('rs-modo-libre').click()
-  await expect(page.getByTestId('rs-modo-desc')).toContainText('does not count')
+  await expect(page.getByTestId('rs-modo-desc')).toContainText('No ranking')
   await expect(page.getByTestId('rs-real')).toBeEnabled({ timeout: 1500 })
   for (let i = 1; i <= 10; i++) {
     await expect(page.getByTestId('rs-prog')).toHaveText(`Chart ${i} of 10`)
@@ -254,8 +254,8 @@ test('la liga trae sus etiquetas og: y de Twitter en el HTML estático (los robo
 }) => {
   const html = await (await request.get('/real-or-stunks')).text()
   for (const esperado of [
-    '<title>Real or Stunks? · Stunks</title>',
-    'property="og:title" content="Real or Stunks? Can you tell real ETH from a made-up market?"',
+    '<title>Can you tell a real market from a simulated one? | Real or Stunks?</title>',
+    'property="og:title" content="Can you tell a real market from a simulated one? | Real or Stunks?"',
     'property="og:description"',
     'property="og:url" content="https://stunks.app/real-or-stunks"',
     'property="og:image" content="https://stunks.app/og-real-or-stunks.png"',
@@ -288,5 +288,5 @@ test('si la huella de IP ya llegó al tope de corridas de Ranked, lo dice y ofre
   })
   await page.goto('/real-or-stunks')
   await expect(page.getByText('Too many Ranked runs have started from your network today')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Try Free play' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Try Free Play' })).toBeVisible()
 })

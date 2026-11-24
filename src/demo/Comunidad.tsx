@@ -217,7 +217,11 @@ export function Final({ resultados, revelacion, esReto, rankedPendiente, onLibre
       )}
 
       <h2>{T.honestTitle}</h2>
-      <p className="rs-honesto">{T.honest}</p>
+      {T.honest.map((l) => (
+        <p className="rs-honesto" key={l}>
+          {l}
+        </p>
+      ))}
       {esReto ? (
         <button type="button" className="rs-prim" onClick={onLibre}>
           {T.playFree}

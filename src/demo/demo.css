@@ -313,3 +313,10 @@
 .rs-resultado.guardada {
   border-top-color: var(--accent);
 }
+
+.rs-pregunta-principal {
+  margin: 2px 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-strong);
+}

@@ -7,7 +7,7 @@ export const cuadritos = (resultados: boolean[]) => resultados.map((b) => (b ? '
 export function textoParaCompartir(resultados: boolean[], numero: number | null, url = URL_DEMO): string {
   const aciertos = resultados.filter(Boolean).length
   const titulo = numero ? `Real or Stunks? #${numero}` : 'Real or Stunks?'
-  return `${titulo} ${aciertos}/${resultados.length}\n${cuadritos(resultados)}\nCan you tell real ETH from a made-up market?\n${url}`
+  return `${titulo} ${aciertos}/${resultados.length}\n${cuadritos(resultados)}\nCan you beat my score?\n${url}`
 }
 
 /** SVG de 600 x 340 con los cuadritos, para guardar o compartir como imagen. */
@@ -30,7 +30,7 @@ export function tarjetaSvg(resultados: boolean[], numero: number | null): string
     `<text x="300" y="70" text-anchor="middle" font-family="Trebuchet MS, Arial, sans-serif" font-size="30" font-weight="800" fill="#ffc531">${titulo}</text>` +
     `<text x="300" y="140" text-anchor="middle" font-family="Trebuchet MS, Arial, sans-serif" font-size="54" font-weight="800" fill="#f0f3fa">${aciertos} / ${resultados.length}</text>` +
     cuadros +
-    `<text x="300" y="270" text-anchor="middle" font-family="Trebuchet MS, Arial, sans-serif" font-size="20" fill="#d1d4dc">Can you tell real ETH from a made-up market?</text>` +
+    `<text x="300" y="270" text-anchor="middle" font-family="Trebuchet MS, Arial, sans-serif" font-size="20" fill="#d1d4dc">Can you beat my score?</text>` +
     `<text x="300" y="305" text-anchor="middle" font-family="Trebuchet MS, Arial, sans-serif" font-size="18" fill="#787b86">stunks.app/real-or-stunks</text>` +
     `</svg>`
   )
