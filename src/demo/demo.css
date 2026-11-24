@@ -20,12 +20,6 @@
   color: var(--accent);
   letter-spacing: 0.02em;
 }
-.rs-modo {
-  color: var(--muted);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
 .rs-main {
   flex: 1;
   padding: 0 14px;
@@ -253,4 +247,56 @@
   border: 1px solid var(--border-2);
   background: var(--panel);
   font-size: 16px;
+}
+.rs-modos {
+  display: flex;
+  border: 1px solid var(--border-2);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.rs-modos button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+.rs-modos button.on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.rs-modo-desc {
+  margin: 0;
+  padding: 0 14px 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.rs-boton {
+  position: relative;
+  overflow: hidden;
+}
+/* Ranked: la espera se ve como una barrita que se llena en el botón, sin texto. */
+.rs-esperando .rs-boton::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 5px;
+  width: 0;
+  background: var(--accent);
+  animation: rs-llenar var(--ms) linear forwards;
+}
+@keyframes rs-llenar {
+  to {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-esperando .rs-boton::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.4;
+  }
 }

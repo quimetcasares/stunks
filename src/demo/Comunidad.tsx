@@ -35,13 +35,21 @@ export function Marcador({ a }: { a: Agregado | null }) {
   return (
     <p className="rs-marcador" data-testid="rs-marcador">
       {T.everyone(pct(a.comun.aciertos, a.comun.total), a.comun.total.toLocaleString('en-US'))}
-      {a.comun.min_segundos > 0 && ` ${T.countRule(a.comun.min_segundos)}`}
     </p>
   )
 }
 
-export function Final({ resultados, esReto, onMas }: { resultados: boolean[]; esReto: boolean; onMas: () => void }) {
-  const { a, recargar } = useAgregado()
+interface PropsFinal {
+  resultados: boolean[]
+  esReto: boolean
+  /** Ranked de hoy todavía sin terminar en este navegador. */
+  rankedPendiente: boolean
+  onLibre: () => void
+  onRanked: () => void
+}
+
+export function Final({ resultados, esReto, rankedPendiente, onLibre, onRanked }: PropsFinal) {
+  const { a, recargar } = useAgregado(esReto)
   const [apodo, setApodo] = useState('')
   const [msg, setMsg] = useState<string | null>(null)
   const [copiado, setCopiado] = useState(false)
@@ -87,69 +95,107 @@ export function Final({ resultados, esReto, onMas }: { resultados: boolean[]; es
       <p className="rs-cuadritos" aria-hidden="true">
         {cuadritos(resultados)}
       </p>
-      {a?.tu.reto?.mejor_que != null && esReto && <p className="rs-sub">{T.beat(a.tu.reto.mejor_que)}</p>}
+      {esReto && a?.tu.reto?.mejor_que != null && <p className="rs-sub">{T.beat(a.tu.reto.mejor_que)}</p>}
       <p className="rs-sub">{T.scoreLine}</p>
 
-      <div className="rs-compartir">
-        <button type="button" className="rs-prim" onClick={() => void compartir()} data-testid="rs-compartir">
-          {copiado ? T.copied : T.share}
-        </button>
-        <button type="button" className="rs-sec" onClick={() => void guardarImagen()}>
-          {T.saveImage}
-        </button>
-      </div>
+      {esReto ? (
+        <>
+          <div className="rs-compartir">
+            <button type="button" className="rs-prim" onClick={() => void compartir()} data-testid="rs-compartir">
+              {copiado ? T.copied : T.share}
+            </button>
+            <button type="button" className="rs-sec" onClick={() => void guardarImagen()}>
+              {T.saveImage}
+            </button>
+          </div>
 
-      <h2>{T.leaderboard}</h2>
-      {a && a.comun.min_segundos > 0 && <p className="rs-sub">{T.countRule(a.comun.min_segundos)}</p>}
-      {a?.comun.tabla.length ? (
-        <ol className="rs-tabla" data-testid="rs-tabla">
-          {a.comun.tabla.slice(0, 10).map((f) => (
-            <li key={f.apodo} className={f.apodo === a.tu.apodo ? 'yo' : ''}>
-              <span>{f.apodo}</span>
-              <span>
-                {pct(f.aciertos, f.total)} · {f.total}
-              </span>
-            </li>
-          ))}
-        </ol>
+          <h2>{T.todayBoard}</h2>
+          {a?.comun.tabla_hoy.length ? (
+            <ol className="rs-tabla" data-testid="rs-tabla-hoy">
+              {a.comun.tabla_hoy.slice(0, 10).map((f) => (
+                <li key={f.apodo} className={f.apodo === a.tu.apodo ? 'yo' : ''}>
+                  <span>{f.apodo}</span>
+                  <span>
+                    {f.aciertos}/10 · {f.segundos}s
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="rs-sub">{T.todayBoardEmpty}</p>
+          )}
+          <p className="rs-sub">{T.todayBoardHelp}</p>
+
+          {a && !a.tu.apodo && (
+            <form
+              className="rs-apodo"
+              onSubmit={(e) => {
+                e.preventDefault()
+                void guardar()
+              }}
+            >
+              <h3>{T.nickTitle}</h3>
+              <p className="rs-sub">{T.nickHelp}</p>
+              <input
+                value={apodo}
+                onChange={(e) => setApodo(e.target.value)}
+                placeholder={T.nickPlaceholder}
+                maxLength={16}
+                aria-label={T.nickPlaceholder}
+              />
+              <button type="submit" className="rs-sec" disabled={apodo.trim().length < 3}>
+                {T.nickSave}
+              </button>
+            </form>
+          )}
+          {msg && (
+            <p className="rs-sub" role="status">
+              {msg}
+            </p>
+          )}
+
+          <h2>{T.allTimeBoard}</h2>
+          {a?.comun.tabla.length ? (
+            <ol className="rs-tabla" data-testid="rs-tabla">
+              {a.comun.tabla.slice(0, 10).map((f) => (
+                <li key={f.apodo} className={f.apodo === a.tu.apodo ? 'yo' : ''}>
+                  <span>{f.apodo}</span>
+                  <span>
+                    {pct(f.aciertos, f.total)} · {f.total}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="rs-sub">{T.leaderboardEmpty}</p>
+          )}
+          <p className="rs-sub">{T.allTimeHelp}</p>
+          {a?.tu.lugar != null && <p className="rs-sub">{T.yourPlace(a.tu.lugar)}</p>}
+        </>
       ) : (
-        <p className="rs-sub">{T.leaderboardEmpty}</p>
-      )}
-      {a?.tu.lugar != null && <p className="rs-sub">{T.yourPlace(a.tu.lugar)}</p>}
-
-      {a && !a.tu.apodo && (
-        <form
-          className="rs-apodo"
-          onSubmit={(e) => {
-            e.preventDefault()
-            void guardar()
-          }}
-        >
-          <h3>{T.nickTitle}</h3>
-          <p className="rs-sub">{T.nickHelp}</p>
-          <input
-            value={apodo}
-            onChange={(e) => setApodo(e.target.value)}
-            placeholder={T.nickPlaceholder}
-            maxLength={16}
-            aria-label={T.nickPlaceholder}
-          />
-          <button type="submit" className="rs-sec" disabled={apodo.trim().length < 3}>
-            {T.nickSave}
-          </button>
-        </form>
-      )}
-      {msg && (
-        <p className="rs-sub" role="status">
-          {msg}
+        <p className="rs-sub" data-testid="rs-free-nota">
+          {T.freeNote}
         </p>
       )}
 
       <h2>{T.honestTitle}</h2>
       <p className="rs-honesto">{T.honest}</p>
-      <button type="button" className="rs-prim" onClick={onMas}>
-        {T.playMore}
-      </button>
+      {esReto ? (
+        <button type="button" className="rs-prim" onClick={onLibre}>
+          {T.playFree}
+        </button>
+      ) : (
+        <>
+          {rankedPendiente && (
+            <button type="button" className="rs-prim" onClick={onRanked} data-testid="rs-ir-ranked">
+              {T.playRanked}
+            </button>
+          )}
+          <button type="button" className={rankedPendiente ? 'rs-sec' : 'rs-prim'} onClick={onLibre} data-testid="rs-otras-10">
+            {T.another10}
+          </button>
+        </>
+      )}
       {esReto && <p className="rs-sub">{T.comeBack}</p>}
     </section>
   )

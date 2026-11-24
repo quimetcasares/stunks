@@ -55,6 +55,9 @@ test('se juega el reto: primera gráfica sin pantalla previa, botones tras el m�
   await page.goto('/real-or-stunks')
   await expect(page.getByTestId('rs-grafica')).toBeVisible()
   await expect(page.getByTestId('rs-prog')).toHaveText('Chart 1 of 10')
+  // Ranked se abre primero y lo dice la página.
+  await expect(page.getByTestId('rs-modo-reto')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByTestId('rs-modo-desc')).toContainText('Today’s 10 charts')
   // Antes del mínimo los botones no se pueden tocar y no hay resultado a la vista.
   await expect(page.getByTestId('rs-real')).toBeDisabled()
   await expect(page.getByTestId('rs-resultado')).toHaveCount(0)
@@ -134,7 +137,7 @@ test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marca
           jugadores: 80,
           hoy_total: 100,
           hoy_aciertos: 50,
-          min_segundos: 3,
+          tabla_hoy: [{ apodo: 'Ana', aciertos: 9, segundos: 80 }],
           tabla: [{ apodo: 'Ana', aciertos: 20, total: 30 }],
         },
         tu: { aciertos: 7, total: 10, apodo, lugar: null, reto: { aciertos: 7, mejor_que: 60, jugaron: 5, numero: 3 } },
@@ -143,8 +146,7 @@ test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marca
   })
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto('/real-or-stunks')
-  await expect(page.getByTestId('rs-marcador')).toContainText('48.6% right')
-  await expect(page.getByTestId('rs-marcador')).toContainText('at least 3 seconds')
+  await expect(page.getByTestId('rs-marcador')).toContainText('Ranked so far: 48.6% right')
   for (let i = 1; i <= 10; i++) {
     await expect(page.getByTestId('rs-prog')).toHaveText(`Chart ${i} of 10`)
     await expect(page.getByTestId('rs-real')).toBeEnabled()
@@ -154,6 +156,7 @@ test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marca
   await expect(page.getByTestId('rs-puntaje')).toContainText('7 of 10')
   await expect(page.getByTestId('rs-puntaje')).toContainText('better than 60%')
   await expect(page.getByTestId('rs-tabla')).toContainText('Ana')
+  await expect(page.getByTestId('rs-tabla-hoy')).toContainText('9/10')
   await page.getByPlaceholder('Nickname').fill('Joa')
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('status')).toContainText('Saved as Joa')
@@ -192,4 +195,47 @@ test('antes de contestar, la página no muestra ni guarda la verdad aunque el se
   expect(guardado).not.toContain('MARCA-DE-VERDAD')
   // Solo se guarda el uuid anónimo del jugador.
   expect(Object.keys(JSON.parse(await page.evaluate(() => JSON.stringify({ ...localStorage }))))).toEqual(['stunks.demo.jugador'])
+})
+
+test('Free play: sin espera, no cuenta para la tabla y ofrece volver a Ranked', async ({ page }) => {
+  let n = 0
+  const pedidos: string[] = []
+  await page.route('**/functions/v1/demo/**', async (route) => {
+    const url = new URL(route.request().url())
+    const h = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }
+    const json = (cuerpo: unknown) => route.fulfill({ contentType: 'application/json', headers: h, body: JSON.stringify(cuerpo) })
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: h })
+    pedidos.push(url.pathname.split('/').pop() ?? '')
+    if (url.pathname.endsWith('/ronda')) {
+      const modo = url.searchParams.get('modo')
+      n++
+      return json({
+        estado: 'ok',
+        ronda: `00000000-0000-4000-8000-0000000000${String(n).padStart(2, '0')}`,
+        modo,
+        n: ((n - 2) % 10) + 1,
+        de: 10,
+        espera_ms: modo === 'reto' ? 5000 : 0,
+        velas: velas(),
+      })
+    }
+    if (url.pathname.endsWith('/respuesta')) return json({ acerto: true, era: 'real' })
+    return json({ ok: true })
+  })
+  await page.goto('/real-or-stunks')
+  // Ranked trae 5 s de espera: los botones están bloqueados.
+  await expect(page.getByTestId('rs-real')).toBeDisabled()
+  await page.getByTestId('rs-modo-libre').click()
+  await expect(page.getByTestId('rs-modo-desc')).toContainText('does not count')
+  await expect(page.getByTestId('rs-real')).toBeEnabled({ timeout: 1500 })
+  for (let i = 1; i <= 10; i++) {
+    await expect(page.getByTestId('rs-prog')).toHaveText(`Chart ${i} of 10`)
+    await page.getByTestId('rs-real').click()
+    await page.getByTestId('rs-siguiente').click()
+  }
+  await expect(page.getByTestId('rs-puntaje')).toContainText('10 of 10')
+  await expect(page.getByTestId('rs-free-nota')).toBeVisible()
+  await expect(page.getByTestId('rs-tabla')).toHaveCount(0)
+  await expect(page.getByTestId('rs-ir-ranked')).toBeVisible()
+  expect(pedidos).not.toContain('agregado-libre')
 })

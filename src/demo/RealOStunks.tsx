@@ -13,7 +13,7 @@ type Fase =
   | { t: 'cargando' }
   | { t: 'error'; codigo: string }
   | { t: 'vacio'; estado: Vacio }
-  | { t: 'jugando'; r: Ronda; listoEn: number; enviando: boolean }
+  | { t: 'jugando'; r: Ronda; listoEn: number; espera: number; enviando: boolean }
   | { t: 'resultado'; r: Ronda; acerto: boolean; era: Fuente; pista: Pista | 'enviada' | null }
   | { t: 'puntaje' }
 
@@ -39,10 +39,12 @@ const guardarReto = (r: boolean[]) => {
 }
 
 export default function RealOStunks() {
-  const [modo, setModo] = useState<Modo>('reto')
+  // Ranked (el reto del día) se abre primero; si hoy ya lo terminaste en este navegador, se abre Free.
+  const [modo, setModo] = useState<Modo>(() => (leerReto().length >= 10 ? 'libre' : 'reto'))
   const [fase, setFase] = useState<Fase>({ t: 'cargando' })
   const [resultados, setResultados] = useState<boolean[]>([])
   const [ahora, setAhora] = useState(Date.now())
+  const inicial = useRef(modo)
   const activo = useRef(true)
   const { a: agregado } = useAgregado(fase.t !== 'puntaje')
 
@@ -61,7 +63,7 @@ export default function RealOStunks() {
       const x = await pedirRonda(m)
       if (!activo.current) return
       if (x.estado === 'ok') {
-        setFase({ t: 'jugando', r: x, listoEn: Date.now() + Math.min(x.espera_ms, 1000), enviando: false })
+        setFase({ t: 'jugando', r: x, listoEn: Date.now() + x.espera_ms, espera: x.espera_ms, enviando: false })
       } else if (x.estado === 'terminado' && m === 'reto') {
         const hechos = leerReto()
         setResultados(hechos)
@@ -76,8 +78,8 @@ export default function RealOStunks() {
 
   // La primera gráfica se pide al cargar la página, sin pantalla de bienvenida.
   useEffect(() => {
-    setResultados(leerReto())
-    void cargar('reto')
+    setResultados(inicial.current === 'reto' ? leerReto() : [])
+    void cargar(inicial.current)
   }, [cargar])
 
   // El reloj corre solo mientras se espera el tiempo mínimo.
@@ -101,7 +103,8 @@ export default function RealOStunks() {
     } catch (e) {
       if (e instanceof ErrorDemo && e.codigo === 'pronto') {
         setAhora(Date.now())
-        setFase({ t: 'jugando', r, listoEn: Date.now() + (e.espera_ms ?? 1000) + 100, enviando: false })
+        const espera = (e.espera_ms ?? 1000) + 100
+        setFase({ t: 'jugando', r, listoEn: Date.now() + espera, espera, enviando: false })
       } else if (e instanceof ErrorDemo && e.codigo === 'ya') {
         void cargar(r.modo)
       } else {
@@ -128,10 +131,10 @@ export default function RealOStunks() {
     else void cargar(fase.r.modo)
   }
 
-  const jugarLibre = () => {
-    setModo('libre')
-    setResultados([])
-    void cargar('libre')
+  const cambiarModo = (m: Modo) => {
+    setModo(m)
+    setResultados(m === 'reto' ? leerReto() : [])
+    void cargar(m)
   }
 
   const enJuego = fase.t === 'jugando' || fase.t === 'resultado'
@@ -143,10 +146,26 @@ export default function RealOStunks() {
         <a className="rs-marca" href="/">
           Stunks
         </a>
-        <span className="rs-modo">{modo === 'reto' ? T.dailyChallenge : T.freePlay}</span>
+        <div className="rs-modos" role="group" aria-label={T.modes}>
+          {(['reto', 'libre'] as Modo[]).map((m) => (
+            <button
+              type="button"
+              key={m}
+              className={m === modo ? 'on' : ''}
+              aria-pressed={m === modo}
+              onClick={() => m !== modo && cambiarModo(m)}
+              data-testid={`rs-modo-${m}`}
+            >
+              {m === 'reto' ? T.ranked : T.free}
+            </button>
+          ))}
+        </div>
       </header>
+      <p className="rs-modo-desc" data-testid="rs-modo-desc">
+        {modo === 'reto' ? T.rankedDesc : T.freeDesc}
+      </p>
 
-      <Marcador a={agregado} />
+      {modo === 'reto' && <Marcador a={agregado} />}
 
       <main className="rs-main">
         <h1 className="rs-titulo">{T.title}</h1>
@@ -184,18 +203,30 @@ export default function RealOStunks() {
                     : T.soldOut}
             </p>
             {fase.estado !== 'sin-grupo' && fase.estado !== 'agotado' && (
-              <button type="button" className="rs-prim" onClick={jugarLibre}>
-                {T.playMore}
+              <button type="button" className="rs-prim" onClick={() => cambiarModo('libre')}>
+                {T.playFree}
               </button>
             )}
           </div>
         )}
 
-        {fase.t === 'puntaje' && <Final resultados={resultados} esReto={modo === 'reto'} onMas={jugarLibre} />}
+        {fase.t === 'puntaje' && (
+          <Final
+            resultados={resultados}
+            esReto={modo === 'reto'}
+            rankedPendiente={leerReto().length < 10}
+            onLibre={() => cambiarModo('libre')}
+            onRanked={() => cambiarModo('reto')}
+          />
+        )}
       </main>
 
       {fase.t === 'jugando' && (
-        <div className="rs-botones" data-testid="rs-botones">
+        <div
+          className={`rs-botones${esperando ? ' rs-esperando' : ''}`}
+          style={{ '--ms': `${fase.espera}ms` } as React.CSSProperties}
+          data-testid="rs-botones"
+        >
           <button
             type="button"
             className="rs-boton rs-real"

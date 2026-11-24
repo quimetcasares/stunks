@@ -80,7 +80,7 @@ export interface Agregado {
     jugadores: number
     hoy_total: number
     hoy_aciertos: number
-    min_segundos: number
+    tabla_hoy: { apodo: string; aciertos: number; segundos: number }[]
     tabla: { apodo: string; aciertos: number; total: number }[]
   }
   tu: {
