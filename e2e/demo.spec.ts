@@ -143,6 +143,7 @@ test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marca
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto('/real-or-stunks')
   await expect(page.getByTestId('rs-marcador')).toContainText('48.6% right')
+  await expect(page.getByTestId('rs-marcador')).toContainText('at least 3 seconds')
   for (let i = 1; i <= 10; i++) {
     await expect(page.getByTestId('rs-prog')).toHaveText(`Chart ${i} of 10`)
     await expect(page.getByTestId('rs-real')).toBeEnabled()

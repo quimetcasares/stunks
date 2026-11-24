@@ -61,7 +61,7 @@ export default function RealOStunks() {
       const x = await pedirRonda(m)
       if (!activo.current) return
       if (x.estado === 'ok') {
-        setFase({ t: 'jugando', r: x, listoEn: Date.now() + x.espera_ms, enviando: false })
+        setFase({ t: 'jugando', r: x, listoEn: Date.now() + Math.min(x.espera_ms, 1000), enviando: false })
       } else if (x.estado === 'terminado' && m === 'reto') {
         const hechos = leerReto()
         setResultados(hechos)
@@ -214,11 +214,6 @@ export default function RealOStunks() {
           >
             {T.stunks}
           </button>
-          {esperando && (
-            <p className="rs-espera" aria-live="polite" data-testid="rs-espera">
-              {T.study(Math.max(1, Math.ceil((fase.listoEn - ahora) / 1000)))}
-            </p>
-          )}
         </div>
       )}
 

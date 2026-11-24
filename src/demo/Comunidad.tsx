@@ -35,6 +35,7 @@ export function Marcador({ a }: { a: Agregado | null }) {
   return (
     <p className="rs-marcador" data-testid="rs-marcador">
       {T.everyone(pct(a.comun.aciertos, a.comun.total), a.comun.total.toLocaleString('en-US'))}
+      {a.comun.min_segundos > 0 && ` ${T.countRule(a.comun.min_segundos)}`}
     </p>
   )
 }
@@ -99,6 +100,7 @@ export function Final({ resultados, esReto, onMas }: { resultados: boolean[]; es
       </div>
 
       <h2>{T.leaderboard}</h2>
+      {a && a.comun.min_segundos > 0 && <p className="rs-sub">{T.countRule(a.comun.min_segundos)}</p>}
       {a?.comun.tabla.length ? (
         <ol className="rs-tabla" data-testid="rs-tabla">
           {a.comun.tabla.slice(0, 10).map((f) => (

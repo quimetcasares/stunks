@@ -2,7 +2,7 @@
 -- Corre con `npm run db:probar` (Supabase local); todo se deshace al terminar.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(21);
 
 insert into privado.demo_grupos (grupo, inicia, activo) values ('prueba', (now() at time zone 'America/New_York')::date - 2, true);
 insert into privado.demo_ventanas (id, grupo, fuente, par, origen, velas)
@@ -48,6 +48,15 @@ select ok(
   not (public.demo_agregado('j1') ?| array['fuente', 'ventana_id', 'origen', 'par']) and not ((public.demo_agregado('j1') -> 'comun') ?| array['fuente', 'por_ventana']),
   'el agregado no trae cifras por ventana ni la verdad'
 );
+
+-- Mínimo para que cuente en el marcador (parámetro de Joaquín; por omisión 0 = cuentan todas).
+select is((select valor from privado.demo_config where clave = 'min_cuenta_ms'), 0, 'por omisión cuentan todas las respuestas');
+update privado.demo_config set valor = 5000 where clave = 'min_cuenta_ms';
+update privado.demo_rondas set servida_en = respondida_en - interval '1 second' where jugador = 'j3';
+delete from privado.demo_cache;
+select is((public.demo_agregado('j1') -> 'comun' ->> 'total')::int, 60, 'con mínimo de 5 s no cuentan las 3 respuestas de 1 s');
+select is((public.demo_agregado('j1') -> 'comun' ->> 'min_segundos')::numeric, 5.0, 'la página puede decir cuántos segundos piden');
+select is((public.demo_agregado('j3') -> 'tu' ->> 'total')::int, 0, 'ni cuentan en lo tuyo');
 
 select * from finish();
 rollback;

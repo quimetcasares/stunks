@@ -20,10 +20,16 @@ create table privado.demo_cache (
   datos jsonb not null
 );
 
+-- Parámetros que decide Joaquín. min_cuenta_ms: tiempo mínimo viendo la gráfica para que una respuesta cuente en el marcador, la
+-- tabla y tu lugar (todas las respuestas se aceptan y se guardan; esto solo filtra lo que se cuenta). 0 = cuentan todas.
+create table privado.demo_config (clave text primary key, valor integer not null);
+insert into privado.demo_config (clave, valor) values ('min_cuenta_ms', 0);
+
+alter table privado.demo_config enable row level security;
 alter table privado.demo_apodos enable row level security;
 alter table privado.demo_apodos_prohibidos enable row level security;
 alter table privado.demo_cache enable row level security;
-revoke all on privado.demo_apodos, privado.demo_apodos_prohibidos, privado.demo_cache from public, anon, authenticated;
+revoke all on privado.demo_apodos, privado.demo_apodos_prohibidos, privado.demo_cache, privado.demo_config from public, anon, authenticated;
 
 -- Pone el apodo del jugador (hace falta haber contestado al menos una ronda, para que nadie reserve nombres en vano).
 -- Devuelve 'ok', 'invalido', 'prohibido', 'ocupado' o 'sin-rondas'.
@@ -64,6 +70,7 @@ as $$
 declare
   c privado.demo_cache;
   hoy date := (now() at time zone 'America/New_York')::date;
+  min_ms integer := coalesce((select valor from privado.demo_config where clave = 'min_cuenta_ms'), 0);
   datos jsonb;
 begin
   select * into c from privado.demo_cache where clave = 'comun';
@@ -81,9 +88,10 @@ begin
     'aciertos', count(*) filter (where acerto),
     'jugadores', count(distinct jugador),
     'hoy_total', count(*) filter (where (respondida_en at time zone 'America/New_York')::date = hoy),
-    'hoy_aciertos', count(*) filter (where acerto and (respondida_en at time zone 'America/New_York')::date = hoy)
+    'hoy_aciertos', count(*) filter (where acerto and (respondida_en at time zone 'America/New_York')::date = hoy),
+    'min_segundos', min_ms / 1000.0
   ) into datos
-  from privado.demo_rondas where respondida_en is not null;
+  from privado.demo_rondas where respondida_en is not null and respondida_en - servida_en >= min_ms * interval '1 millisecond';
 
   datos := datos || jsonb_build_object('tabla', coalesce((
     select jsonb_agg(jsonb_build_object('apodo', t.apodo, 'aciertos', t.aciertos, 'total', t.total) order by t.pos)
@@ -91,7 +99,7 @@ begin
       select a.apodo, count(*) filter (where r.acerto) as aciertos, count(*) as total,
              row_number() over (order by (count(*) filter (where r.acerto))::numeric / count(*) desc, count(*) desc, a.apodo) as pos
       from privado.demo_rondas r join privado.demo_apodos a on a.jugador = r.jugador
-      where r.respondida_en is not null
+      where r.respondida_en is not null and r.respondida_en - r.servida_en >= min_ms * interval '1 millisecond'
       group by a.apodo
       having count(*) >= 30
     ) t where t.pos <= 20
@@ -113,6 +121,7 @@ set search_path = ''
 as $$
 declare
   hoy date := (now() at time zone 'America/New_York')::date;
+  min_ms integer := coalesce((select valor from privado.demo_config where clave = 'min_cuenta_ms'), 0);
   tu jsonb;
   mis_aciertos integer;
   mi_total integer;
@@ -124,14 +133,14 @@ declare
   numero integer;
 begin
   select count(*) filter (where acerto), count(*) into mis_aciertos, mi_total
-    from privado.demo_rondas where jugador = p_jugador and respondida_en is not null;
+    from privado.demo_rondas where jugador = p_jugador and respondida_en is not null and respondida_en - servida_en >= min_ms * interval '1 millisecond';
   select apodo into mi_apodo from privado.demo_apodos where jugador = p_jugador;
 
   if mi_apodo is not null and mi_total >= 30 then
     select 1 + count(*) into mi_lugar from (
       select r.jugador, count(*) filter (where r.acerto) as ac, count(*) as tot
       from privado.demo_rondas r join privado.demo_apodos a on a.jugador = r.jugador
-      where r.respondida_en is not null group by r.jugador having count(*) >= 30
+      where r.respondida_en is not null and r.respondida_en - r.servida_en >= min_ms * interval '1 millisecond' group by r.jugador having count(*) >= 30
     ) x
     where x.ac::numeric / x.tot > mis_aciertos::numeric / mi_total
        or (x.ac::numeric / x.tot = mis_aciertos::numeric / mi_total and x.tot > mi_total);
@@ -141,12 +150,12 @@ begin
 
   -- Reto de hoy: solo cuenta si ya contestó las 10.
   select count(*) filter (where acerto) into mi_reto from privado.demo_rondas
-    where jugador = p_jugador and modo = 'reto' and reto_fecha = hoy and respondida_en is not null
+    where jugador = p_jugador and modo = 'reto' and reto_fecha = hoy and respondida_en is not null and respondida_en - servida_en >= min_ms * interval '1 millisecond'
     having count(*) = 10;
   if mi_reto is not null then
     with por_jugador as (
       select jugador, count(*) filter (where acerto) as ac from privado.demo_rondas
-      where modo = 'reto' and reto_fecha = hoy and respondida_en is not null
+      where modo = 'reto' and reto_fecha = hoy and respondida_en is not null and respondida_en - servida_en >= min_ms * interval '1 millisecond'
       group by jugador having count(*) = 10
     )
     select count(*) filter (where ac < mi_reto), count(*) into menores, jugaron from por_jugador;
