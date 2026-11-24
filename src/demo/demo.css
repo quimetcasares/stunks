@@ -201,3 +201,56 @@
     height: 380px;
   }
 }
+.rs-marcador {
+  margin: 0;
+  padding: 0 14px 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.rs-compartir {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0 18px;
+}
+.rs-tabla {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  counter-reset: pos;
+}
+.rs-tabla li {
+  counter-increment: pos;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.rs-tabla li::before {
+  content: counter(pos) ".";
+  color: var(--muted);
+  width: 28px;
+}
+.rs-tabla li span:first-of-type {
+  flex: 1;
+}
+.rs-tabla li.yo {
+  background: var(--panel);
+  color: var(--accent);
+}
+.rs-apodo {
+  margin: 16px 0;
+  display: grid;
+  gap: 8px;
+}
+.rs-apodo h3 {
+  margin: 0;
+}
+.rs-apodo input {
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-2);
+  background: var(--panel);
+  font-size: 16px;
+}

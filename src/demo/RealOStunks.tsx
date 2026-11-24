@@ -3,6 +3,7 @@
 // La verdad solo llega del servidor después de contestar; esta página no la conoce antes.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ErrorDemo, enviarPista, type Fuente, type Modo, type Pista, pedirRonda, type Ronda, responder } from './api'
+import { Final, Marcador, useAgregado } from './Comunidad'
 import { GraficaVelas } from './GraficaVelas'
 import { T } from './textos'
 import './demo.css'
@@ -43,6 +44,7 @@ export default function RealOStunks() {
   const [resultados, setResultados] = useState<boolean[]>([])
   const [ahora, setAhora] = useState(Date.now())
   const activo = useRef(true)
+  const { a: agregado } = useAgregado(fase.t !== 'puntaje')
 
   useEffect(() => {
     document.title = `${T.title} · Stunks`
@@ -144,6 +146,8 @@ export default function RealOStunks() {
         <span className="rs-modo">{modo === 'reto' ? T.dailyChallenge : T.freePlay}</span>
       </header>
 
+      <Marcador a={agregado} />
+
       <main className="rs-main">
         <h1 className="rs-titulo">{T.title}</h1>
         {enJuego && rActual ? (
@@ -187,7 +191,7 @@ export default function RealOStunks() {
           </div>
         )}
 
-        {fase.t === 'puntaje' && <Puntaje resultados={resultados} modo={modo} onMas={jugarLibre} />}
+        {fase.t === 'puntaje' && <Final resultados={resultados} esReto={modo === 'reto'} onMas={jugarLibre} />}
       </main>
 
       {fase.t === 'jugando' && (
@@ -252,24 +256,5 @@ export default function RealOStunks() {
         </p>
       </footer>
     </div>
-  )
-}
-
-function Puntaje({ resultados, modo, onMas }: { resultados: boolean[]; modo: Modo; onMas: () => void }) {
-  return (
-    <section className="rs-puntaje" data-testid="rs-puntaje">
-      <p className="rs-grande">{T.scoreTitle(resultados.filter(Boolean).length, resultados.length)}</p>
-      <p className="rs-cuadritos" aria-hidden="true">
-        {/* Sin spoilers: solo si le atinó o no, nunca cuál era cuál. */}
-        {resultados.map((b) => (b ? '🟩' : '🟥')).join('')}
-      </p>
-      <p className="rs-sub">{T.scoreLine}</p>
-      <h2>{T.honestTitle}</h2>
-      <p className="rs-honesto">{T.honest}</p>
-      <button type="button" className="rs-prim" onClick={onMas}>
-        {T.playMore}
-      </button>
-      {modo === 'reto' && <p className="rs-sub">{T.comeBack}</p>}
-    </section>
   )
 }

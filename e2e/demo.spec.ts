@@ -101,3 +101,60 @@ test('en cel los dos botones son grandes y están dentro de la pantalla', async 
   expect((g?.y ?? 0) + (g?.height ?? 0)).toBeLessThanOrEqual(b?.y ?? 0)
   await page.screenshot({ path: 'test-results/demo-cel.png' })
 })
+
+test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marcador se ve', async ({ page }) => {
+  let n = 0
+  let apodo: string | null = null
+  await page.route('**/functions/v1/demo/**', async (route) => {
+    const url = new URL(route.request().url())
+    const h = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }
+    const json = (cuerpo: unknown, status = 200) =>
+      route.fulfill({ status, contentType: 'application/json', headers: h, body: JSON.stringify(cuerpo) })
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: h })
+    if (url.pathname.endsWith('/ronda'))
+      return json({
+        estado: 'ok',
+        ronda: `00000000-0000-4000-8000-0000000000${String(++n).padStart(2, '0')}`,
+        modo: 'reto',
+        n,
+        de: 10,
+        espera_ms: 0,
+        velas: velas(),
+      })
+    if (url.pathname.endsWith('/respuesta')) return json({ acerto: n <= 7, era: 'stunks' })
+    if (url.pathname.endsWith('/apodo')) {
+      apodo = JSON.parse(route.request().postData() ?? '{}').apodo
+      return json({ ok: true })
+    }
+    if (url.pathname.endsWith('/agregado'))
+      return json({
+        comun: {
+          total: 1234,
+          aciertos: 600,
+          jugadores: 80,
+          hoy_total: 100,
+          hoy_aciertos: 50,
+          tabla: [{ apodo: 'Ana', aciertos: 20, total: 30 }],
+        },
+        tu: { aciertos: 7, total: 10, apodo, lugar: null, reto: { aciertos: 7, mejor_que: 60, jugaron: 5, numero: 3 } },
+      })
+    return json({ ok: true })
+  })
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto('/real-or-stunks')
+  await expect(page.getByTestId('rs-marcador')).toContainText('48.6% right')
+  for (let i = 1; i <= 10; i++) {
+    await expect(page.getByTestId('rs-prog')).toHaveText(`Chart ${i} of 10`)
+    await expect(page.getByTestId('rs-real')).toBeEnabled()
+    await page.getByTestId('rs-real').click()
+    await page.getByTestId('rs-siguiente').click()
+  }
+  await expect(page.getByTestId('rs-puntaje')).toContainText('7 of 10')
+  await expect(page.getByTestId('rs-puntaje')).toContainText('better than 60%')
+  await expect(page.getByTestId('rs-tabla')).toContainText('Ana')
+  await page.getByPlaceholder('Nickname').fill('Joa')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('Saved as Joa')
+  expect(apodo).toBe('Joa')
+  await page.screenshot({ path: 'test-results/demo-final.png', fullPage: true })
+})

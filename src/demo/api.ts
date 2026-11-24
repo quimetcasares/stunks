@@ -72,3 +72,23 @@ export const responder = (ronda: string, dijo: Fuente) =>
   llamar<{ acerto: boolean; era: Fuente }>('respuesta', { method: 'POST', body: JSON.stringify({ ronda, dijo }) })
 export const enviarPista = (ronda: string, pista: Pista) =>
   llamar<{ ok: true }>('pista', { method: 'POST', body: JSON.stringify({ ronda, pista }) })
+
+export interface Agregado {
+  comun: {
+    total: number
+    aciertos: number
+    jugadores: number
+    hoy_total: number
+    hoy_aciertos: number
+    tabla: { apodo: string; aciertos: number; total: number }[]
+  }
+  tu: {
+    aciertos: number
+    total: number
+    apodo: string | null
+    lugar: number | null
+    reto?: { aciertos: number; mejor_que: number | null; jugaron: number; numero: number }
+  }
+}
+export const pedirAgregado = () => llamar<Agregado>('agregado')
+export const ponerApodo = (apodo: string) => llamar<{ ok: true }>('apodo', { method: 'POST', body: JSON.stringify({ apodo }) })
