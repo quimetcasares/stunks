@@ -105,11 +105,24 @@ begin
 end;
 $$;
 
+-- Las 10 respuestas de una corrida de Ranked ya terminada, en orden: lo que se revela AL FINAL (no tras cada gráfica: revelarlo al
+-- momento, con un reparto fijo, deja ganar contando; revisión de seguridad A1).
+create function privado.demo_revelacion(p_jugador text, p_dia date)
+returns jsonb
+language sql
+stable
+set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object('n', x.n, 'acerto', x.acerto, 'era', w.fuente) order by x.n), '[]'::jsonb)
+  from privado.demo_rondas x join privado.demo_ventanas w on w.id = x.ventana_id
+  where x.jugador = p_jugador and x.modo = 'reto' and x.reto_fecha = p_dia and x.respondida_en is not null
+$$;
+
 -- La siguiente gráfica del jugador.
---   'reto':  las 10 del día, iguales para todos (reto_dia = días desde `inicia`, en fecha de Nueva York), en el orden fijo del
---            horario. Una sola vez por jugador y día.
---   'libre': tandas de 10 con 5 reales y 5 de Stunks y sin dos parejas juntas, de la reserva y de los retos de días ya pasados
---            (nunca las de hoy ni las de días futuros), sin repetir ninguna que el jugador ya vio.
+--   'reto':  las 10 del día, las mismas para todos (reto_dia = días desde `inicia`, en fecha de Nueva York) pero **en un orden que
+--            cambia por jugador** (estable: lo da el hash del jugador y de la ventana). Una sola vez por jugador y día.
+--   'libre': tandas de 10 al azar (sin forzar cuántas son reales: un balance fijo se puede contar) y sin dos parejas juntas, de la
+--            reserva y de los retos de días ya pasados (nunca las de hoy ni las de días futuros), sin repetir ninguna que el jugador ya vio.
 -- Si ya hay una ronda sin contestar de ese modo, vuelve a entregar la misma (recargar la página no regala otra gráfica).
 create function public.demo_servir(p_jugador text, p_modo text, p_min_ms integer, p_ip_hash text default null)
 returns jsonb
@@ -124,10 +137,7 @@ declare
   hoy date := (now() at time zone 'America/New_York')::date;
   idx integer;
   hechas integer;
-  reales integer;
-  stunks integer;
   pares integer[];
-  quiero text;
   huella integer;
   cuenta integer;
   tope integer;
@@ -155,9 +165,12 @@ begin
     end if;
     select count(*) into hechas from privado.demo_rondas where jugador = p_jugador and modo = 'reto' and reto_fecha = hoy;
     if hechas >= 10 then
-      return jsonb_build_object('estado', 'terminado');
+      return jsonb_build_object('estado', 'terminado', 'revelacion', privado.demo_revelacion(p_jugador, hoy));
     end if;
-    select * into v from privado.demo_ventanas where grupo = g.grupo and reto_dia = idx and reto_pos = hechas;
+    select w.* into v from privado.demo_ventanas w
+      where w.grupo = g.grupo and w.reto_dia = idx
+        and not exists (select 1 from privado.demo_rondas x where x.jugador = p_jugador and x.ventana_id = w.id)
+      order by md5(p_jugador || w.id::text) limit 1;
     if not found then
       return jsonb_build_object('estado', 'sin-reto');
     end if;
@@ -183,22 +196,20 @@ begin
   else
     select count(*) into hechas from privado.demo_rondas where jugador = p_jugador and modo = 'libre';
     hechas := hechas % 10; -- lugar dentro de la tanda de 10
-    select count(*) filter (where t.fuente = 'real'), count(*) filter (where t.fuente = 'stunks'), coalesce(array_agg(t.par), '{}')
-      into reales, stunks, pares
+    select coalesce(array_agg(t.par), '{}') into pares
       from (
-        select w.fuente, w.par from privado.demo_rondas x join privado.demo_ventanas w on w.id = x.ventana_id
+        select w.par from privado.demo_rondas x join privado.demo_ventanas w on w.id = x.ventana_id
         where x.jugador = p_jugador and x.modo = 'libre' order by x.servida_en desc limit hechas
       ) t;
-    quiero := case when reales >= 5 then 'stunks' when stunks >= 5 then 'real' when random() < 0.5 then 'real' else 'stunks' end;
     select w.* into v from privado.demo_ventanas w
-      where w.grupo = g.grupo and w.fuente = quiero and (w.reto_dia is null or w.reto_dia < idx)
+      where w.grupo = g.grupo and (w.reto_dia is null or w.reto_dia < idx)
         and not exists (select 1 from privado.demo_rondas x where x.jugador = p_jugador and x.ventana_id = w.id)
         and w.par <> all (pares)
       order by random() limit 1;
     if not found then
       -- Sin la regla de las parejas juntas, para no dejar a nadie sin gráfica por eso.
       select w.* into v from privado.demo_ventanas w
-        where w.grupo = g.grupo and w.fuente = quiero and (w.reto_dia is null or w.reto_dia < idx)
+        where w.grupo = g.grupo and (w.reto_dia is null or w.reto_dia < idx)
           and not exists (select 1 from privado.demo_rondas x where x.jugador = p_jugador and x.ventana_id = w.id)
         order by random() limit 1;
     end if;
@@ -220,7 +231,8 @@ end;
 $$;
 
 -- Contesta una ronda: una respuesta por ronda y, en el reto (Ranked), el tiempo mínimo contado con el reloj de la base desde que
--- se sirvió; el juego libre (Free) no espera. Antes del mínimo no se acepta y la ronda sigue abierta. Una ronda ajena o inexistente responde igual: 'no-existe'.
+-- se sirvió; el juego libre (Free) no espera. Antes del mínimo no se acepta. **En Ranked no se devuelve si acertó ni qué era hasta
+-- contestar la décima**; entonces salen las 10 juntas (`revelacion`). En Free la respuesta es inmediata. y la ronda sigue abierta. Una ronda ajena o inexistente responde igual: 'no-existe'.
 create function public.demo_responder(p_ronda uuid, p_jugador text, p_dijo text, p_min_ms integer)
 returns jsonb
 language plpgsql
@@ -248,7 +260,14 @@ begin
   end if;
   select fuente into era from privado.demo_ventanas where id = r.ventana_id;
   update privado.demo_rondas set respondida_en = now(), dijo = p_dijo, acerto = (p_dijo = era) where ronda = p_ronda;
-  return jsonb_build_object('estado', 'ok', 'acerto', p_dijo = era, 'era', era);
+  if r.modo = 'libre' then
+    return jsonb_build_object('estado', 'ok', 'acerto', p_dijo = era, 'era', era);
+  end if;
+  -- Ranked: solo "recibida". Con la décima, las 10 juntas.
+  if (select count(*) from privado.demo_rondas where jugador = p_jugador and modo = 'reto' and reto_fecha = r.reto_fecha and respondida_en is not null) >= 10 then
+    return jsonb_build_object('estado', 'ok', 'recibida', true, 'n', r.n, 'revelacion', privado.demo_revelacion(p_jugador, r.reto_fecha));
+  end if;
+  return jsonb_build_object('estado', 'ok', 'recibida', true, 'n', r.n);
 end;
 $$;
 
@@ -272,6 +291,7 @@ begin
 end;
 $$;
 
+revoke all on function privado.demo_revelacion(text, date) from public, anon, authenticated;
 revoke all on function public.demo_limite(text, integer) from public, anon, authenticated;
 revoke all on function public.demo_servir(text, text, integer, text) from public, anon, authenticated;
 revoke all on function public.demo_responder(uuid, text, text, integer) from public, anon, authenticated;
