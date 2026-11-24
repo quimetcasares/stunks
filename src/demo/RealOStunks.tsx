@@ -2,7 +2,17 @@
 // real o de Stunks. Primero para cel: la gráfica arriba y dos botones grandes abajo. Sin registro ni apodo para jugar.
 // La verdad solo llega del servidor después de contestar; esta página no la conoce antes.
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ErrorDemo, enviarPista, type Fuente, type Modo, type Pista, pedirRonda, type Ronda, responder } from './api'
+import {
+  ErrorDemo,
+  enviarPista,
+  type Fuente,
+  type Modo,
+  type Pista,
+  pedirRonda,
+  type Revelacion,
+  type Ronda,
+  responder,
+} from './api'
 import { Final, Marcador, useAgregado } from './Comunidad'
 import { GraficaVelas } from './GraficaVelas'
 import { T } from './textos'
@@ -15,6 +25,8 @@ type Fase =
   | { t: 'vacio'; estado: Vacio }
   | { t: 'jugando'; r: Ronda; listoEn: number; espera: number; enviando: boolean }
   | { t: 'resultado'; r: Ronda; acerto: boolean; era: Fuente; pista: Pista | 'enviada' | null }
+  // Ranked: la respuesta quedó guardada, pero no se dice si acertó hasta la décima.
+  | { t: 'guardada'; r: Ronda; pista: Pista | 'enviada' | null }
   | { t: 'puntaje' }
 
 const PISTAS: Pista[] = ['mechas', 'volumen', 'brincos', 'limpia', 'nose']
@@ -43,6 +55,7 @@ export default function RealOStunks() {
   const [modo, setModo] = useState<Modo>(() => (leerReto().length >= 10 ? 'libre' : 'reto'))
   const [fase, setFase] = useState<Fase>({ t: 'cargando' })
   const [resultados, setResultados] = useState<boolean[]>([])
+  const [revelacion, setRevelacion] = useState<Revelacion[]>([])
   const [ahora, setAhora] = useState(Date.now())
   const inicial = useRef(modo)
   const activo = useRef(true)
@@ -65,8 +78,11 @@ export default function RealOStunks() {
       if (x.estado === 'ok') {
         setFase({ t: 'jugando', r: x, listoEn: Date.now() + x.espera_ms, espera: x.espera_ms, enviando: false })
       } else if (x.estado === 'terminado' && m === 'reto') {
-        const hechos = leerReto()
+        // El servidor trae las 10 para poder mostrarlas otra vez; si no, las guardadas en este navegador.
+        const hechos = x.revelacion?.length === 10 ? x.revelacion.map((a) => a.acerto) : leerReto()
+        setRevelacion(x.revelacion ?? [])
         setResultados(hechos)
+        if (hechos.length >= 10) guardarReto(hechos)
         setFase(hechos.length >= 10 ? { t: 'puntaje' } : { t: 'vacio', estado: 'terminado' })
       } else {
         setFase({ t: 'vacio', estado: x.estado })
@@ -96,10 +112,20 @@ export default function RealOStunks() {
     setFase({ ...fase, enviando: true })
     try {
       const x = await responder(r.ronda, dijo)
-      const nuevos = [...resultados, x.acerto]
-      setResultados(nuevos)
-      if (r.modo === 'reto') guardarReto(nuevos)
-      setFase({ t: 'resultado', r, acerto: x.acerto, era: x.era, pista: null })
+      if ('acerto' in x) {
+        // Free play: se dice al instante.
+        setResultados([...resultados, x.acerto])
+        setFase({ t: 'resultado', r, acerto: x.acerto, era: x.era, pista: null })
+      } else {
+        // Ranked: solo "recibida"; con la décima llegan las 10 juntas.
+        if (x.revelacion?.length === 10) {
+          const todas = x.revelacion.map((a) => a.acerto)
+          setRevelacion(x.revelacion)
+          setResultados(todas)
+          guardarReto(todas)
+        }
+        setFase({ t: 'guardada', r, pista: null })
+      }
     } catch (e) {
       if (e instanceof ErrorDemo && e.codigo === 'pronto') {
         setAhora(Date.now())
@@ -114,19 +140,19 @@ export default function RealOStunks() {
   }
 
   const darPista = async (p: Pista) => {
-    if (fase.t !== 'resultado' || fase.pista) return
+    if ((fase.t !== 'resultado' && fase.t !== 'guardada') || fase.pista) return
     const { r } = fase
     setFase({ ...fase, pista: p })
     try {
       await enviarPista(r.ronda, p)
-      setFase((f) => (f.t === 'resultado' && f.r.ronda === r.ronda ? { ...f, pista: 'enviada' } : f))
+      setFase((f) => ((f.t === 'resultado' || f.t === 'guardada') && f.r.ronda === r.ronda ? { ...f, pista: 'enviada' } : f))
     } catch {
       // Es opcional: si no llega, no se le dice nada al jugador.
     }
   }
 
   const siguiente = () => {
-    if (fase.t !== 'resultado') return
+    if (fase.t !== 'resultado' && fase.t !== 'guardada') return
     if (fase.r.n >= fase.r.de) setFase({ t: 'puntaje' })
     else void cargar(fase.r.modo)
   }
@@ -134,11 +160,12 @@ export default function RealOStunks() {
   const cambiarModo = (m: Modo) => {
     setModo(m)
     setResultados(m === 'reto' ? leerReto() : [])
+    setRevelacion([])
     void cargar(m)
   }
 
-  const enJuego = fase.t === 'jugando' || fase.t === 'resultado'
-  const rActual = fase.t === 'jugando' || fase.t === 'resultado' ? fase.r : null
+  const enJuego = fase.t === 'jugando' || fase.t === 'resultado' || fase.t === 'guardada'
+  const rActual = fase.t === 'jugando' || fase.t === 'resultado' || fase.t === 'guardada' ? fase.r : null
 
   return (
     <div className="rs">
@@ -215,6 +242,7 @@ export default function RealOStunks() {
         {fase.t === 'puntaje' && (
           <Final
             resultados={resultados}
+            revelacion={revelacion}
             esReto={modo === 'reto'}
             rankedPendiente={leerReto().length < 10}
             onLibre={() => cambiarModo('libre')}
@@ -272,6 +300,32 @@ export default function RealOStunks() {
           )}
           <button type="button" className="rs-prim" onClick={siguiente} data-testid="rs-siguiente">
             {fase.r.n >= fase.r.de ? T.seeScore : T.next}
+          </button>
+        </div>
+      )}
+
+      {fase.t === 'guardada' && (
+        <div className="rs-resultado guardada" role="status" data-testid="rs-guardada">
+          <p className="rs-veredicto">{T.saved}</p>
+          <p className="rs-era">{fase.r.n >= fase.r.de ? '' : T.savedSub}</p>
+          <p className="rs-pregunta">{fase.pista === 'enviada' ? T.thanks : T.whatMadeYouDecide}</p>
+          {fase.pista !== 'enviada' && (
+            <div className="rs-pistas">
+              {PISTAS.map((p) => (
+                <button
+                  type="button"
+                  key={p}
+                  className={`rs-chip${fase.pista === p ? ' on' : ''}`}
+                  disabled={fase.pista !== null}
+                  onClick={() => void darPista(p)}
+                >
+                  {T.hintsRanked[p]}
+                </button>
+              ))}
+            </div>
+          )}
+          <button type="button" className="rs-prim" onClick={siguiente} data-testid="rs-siguiente">
+            {fase.r.n >= fase.r.de ? T.seeResults : T.next}
           </button>
         </div>
       )}

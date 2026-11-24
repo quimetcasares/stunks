@@ -1,11 +1,13 @@
-// Lo que se ve de los demás: el marcador en vivo (se consulta cada 15 s mientras la pestaña está a la vista) y, al terminar,
+// Lo que se ve de los demás: el marcador en vivo (se consulta cada 60 s, solo con la pestaña a la vista y mientras la persona esté tocando algo: a los 5 minutos sin actividad deja de consultar) y, al terminar,
 // tu lugar, el apodo, la tabla de líderes y la tarjeta para compartir.
 import { useCallback, useEffect, useState } from 'react'
-import { type Agregado, ErrorDemo, pedirAgregado, ponerApodo } from './api'
+import { type Agregado, ErrorDemo, pedirAgregado, ponerApodo, type Revelacion } from './api'
 import { cuadritos, tarjetaPng, textoParaCompartir } from './tarjeta'
 import { T } from './textos'
 
-const CADA_MS = 15_000
+const CADA_MS = 60_000
+/** Sin tocar nada por este tiempo, se deja de consultar el marcador (cada llamada gasta cuota; revisión de seguridad A5). */
+const INACTIVO_MS = 5 * 60_000
 
 export function useAgregado(activo = true) {
   const [a, setA] = useState<Agregado | null>(null)
@@ -19,11 +21,30 @@ export function useAgregado(activo = true) {
   }, [])
   useEffect(() => {
     if (!activo) return
+    let ultima = Date.now()
+    let dormido = false
     void recargar()
+    const toco = () => {
+      ultima = Date.now()
+      if (dormido) {
+        dormido = false
+        void recargar()
+      }
+    }
+    const eventos = ['pointerdown', 'keydown', 'touchstart'] as const
+    for (const e of eventos) window.addEventListener(e, toco, { passive: true })
     const id = setInterval(() => {
-      if (!document.hidden) void recargar()
+      if (document.hidden) return
+      if (Date.now() - ultima > INACTIVO_MS) {
+        dormido = true
+        return
+      }
+      void recargar()
     }, CADA_MS)
-    return () => clearInterval(id)
+    return () => {
+      clearInterval(id)
+      for (const e of eventos) window.removeEventListener(e, toco)
+    }
   }, [activo, recargar])
   return { a, recargar }
 }
@@ -41,6 +62,8 @@ export function Marcador({ a }: { a: Agregado | null }) {
 
 interface PropsFinal {
   resultados: boolean[]
+  /** Ranked: lo que era cada una de las 10 (solo se conoce al terminar). */
+  revelacion: Revelacion[]
   esReto: boolean
   /** Ranked de hoy todavía sin terminar en este navegador. */
   rankedPendiente: boolean
@@ -48,7 +71,7 @@ interface PropsFinal {
   onRanked: () => void
 }
 
-export function Final({ resultados, esReto, rankedPendiente, onLibre, onRanked }: PropsFinal) {
+export function Final({ resultados, revelacion, esReto, rankedPendiente, onLibre, onRanked }: PropsFinal) {
   const { a, recargar } = useAgregado(esReto)
   const [apodo, setApodo] = useState('')
   const [msg, setMsg] = useState<string | null>(null)
@@ -97,6 +120,19 @@ export function Final({ resultados, esReto, rankedPendiente, onLibre, onRanked }
       </p>
       {esReto && a?.tu.reto?.mejor_que != null && <p className="rs-sub">{T.beat(a.tu.reto.mejor_que)}</p>}
       <p className="rs-sub">{T.scoreLine}</p>
+
+      {esReto && revelacion.length > 0 && (
+        <>
+          <h2>{T.yourResults}</h2>
+          <ol className="rs-rev" data-testid="rs-revelacion">
+            {revelacion.map((x) => (
+              <li key={x.n} className={x.acerto ? 'bien' : 'mal'}>
+                <span aria-hidden="true">{x.acerto ? '🟩' : '🟥'}</span> {T.resultLine(x.n, x.era)}
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
 
       {esReto ? (
         <>

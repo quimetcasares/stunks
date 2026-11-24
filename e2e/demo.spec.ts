@@ -48,7 +48,8 @@ test('se juega el reto: primera gráfica sin pantalla previa, botones tras el m�
         velas: velas(),
       })
     }
-    if (url.pathname.endsWith('/respuesta')) return json({ acerto: n % 2 === 1, era: 'real' })
+    // Ranked: solo "recibida"; si la página pintara un veredicto, lo inventaría ella.
+    if (url.pathname.endsWith('/respuesta')) return json({ recibida: true, n })
     return json({ ok: true })
   })
 
@@ -64,9 +65,11 @@ test('se juega el reto: primera gráfica sin pantalla previa, botones tras el m�
   await expect(page.getByTestId('rs-real')).toBeEnabled({ timeout: 5000 })
 
   await page.getByTestId('rs-real').click()
-  await expect(page.getByTestId('rs-resultado')).toContainText('Correct!')
+  await expect(page.getByTestId('rs-guardada')).toContainText('Answer locked in.')
+  // En Ranked no se dice si acertó ni qué era: ni palabras de veredicto ni de la fuente.
+  await expect(page.getByText(/Correct!|Not quite|That was real|That was a Stunks market/)).toHaveCount(0)
   await page.getByRole('button', { name: 'Wicks' }).click()
-  await expect(page.getByTestId('rs-resultado')).toContainText('Thanks!')
+  await expect(page.getByTestId('rs-guardada')).toContainText('Thanks!')
   await page.getByTestId('rs-siguiente').click()
   await expect(page.getByTestId('rs-prog')).toHaveText('Chart 2 of 10')
   expect(vistos).toContain('POST pista')
@@ -124,7 +127,11 @@ test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marca
         espera_ms: 0,
         velas: velas(),
       })
-    if (url.pathname.endsWith('/respuesta')) return json({ acerto: n <= 7, era: 'stunks' })
+    if (url.pathname.endsWith('/respuesta')) {
+      if (n < 10) return json({ recibida: true, n })
+      const revelacion = Array.from({ length: 10 }, (_, i) => ({ n: i + 1, acerto: i < 7, era: i % 2 ? 'real' : 'stunks' }))
+      return json({ recibida: true, n, revelacion })
+    }
     if (url.pathname.endsWith('/apodo')) {
       apodo = JSON.parse(route.request().postData() ?? '{}').apodo
       return json({ ok: true })
@@ -154,6 +161,8 @@ test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marca
     await page.getByTestId('rs-siguiente').click()
   }
   await expect(page.getByTestId('rs-puntaje')).toContainText('7 of 10')
+  await expect(page.getByTestId('rs-revelacion')).toContainText('Chart 1: it was Stunks')
+  await expect(page.getByTestId('rs-revelacion')).toContainText('Chart 2: it was real')
   await expect(page.getByTestId('rs-puntaje')).toContainText('better than 60%')
   await expect(page.getByTestId('rs-tabla')).toContainText('Ana')
   await expect(page.getByTestId('rs-tabla-hoy')).toContainText('9/10')
