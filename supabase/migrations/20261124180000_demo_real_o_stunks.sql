@@ -172,14 +172,14 @@ begin
     'ronda', r.ronda,
     'n', r.n,
     'de', 10,
-    'espera_ms', greatest(0, p_min_ms - floor(extract(epoch from (now() - r.servida_en)) * 1000)::integer),
+    'espera_ms', case when r.modo = 'reto' then greatest(0, p_min_ms - floor(extract(epoch from (now() - r.servida_en)) * 1000)::integer) else 0 end,
     'velas', v.velas
   );
 end;
 $$;
 
--- Contesta una ronda: una respuesta por ronda y el tiempo mínimo contado con el reloj de la base desde que se sirvió. Antes del
--- mínimo no se acepta y la ronda sigue abierta. Una ronda ajena o inexistente responde igual: 'no-existe'.
+-- Contesta una ronda: una respuesta por ronda y, en el reto (Ranked), el tiempo mínimo contado con el reloj de la base desde que
+-- se sirvió; el juego libre (Free) no espera. Antes del mínimo no se acepta y la ronda sigue abierta. Una ronda ajena o inexistente responde igual: 'no-existe'.
 create function public.demo_responder(p_ronda uuid, p_jugador text, p_dijo text, p_min_ms integer)
 returns jsonb
 language plpgsql
@@ -202,7 +202,7 @@ begin
     return jsonb_build_object('estado', 'ya');
   end if;
   pasado := floor(extract(epoch from (now() - r.servida_en)) * 1000)::integer;
-  if pasado < p_min_ms then
+  if r.modo = 'reto' and pasado < p_min_ms then
     return jsonb_build_object('estado', 'pronto', 'espera_ms', p_min_ms - pasado);
   end if;
   select fuente into era from privado.demo_ventanas where id = r.ventana_id;
