@@ -134,6 +134,7 @@ test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marca
           jugadores: 80,
           hoy_total: 100,
           hoy_aciertos: 50,
+          min_segundos: 3,
           tabla: [{ apodo: 'Ana', aciertos: 20, total: 30 }],
         },
         tu: { aciertos: 7, total: 10, apodo, lugar: null, reto: { aciertos: 7, mejor_que: 60, jugaron: 5, numero: 3 } },
