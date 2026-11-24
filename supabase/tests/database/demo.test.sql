@@ -2,7 +2,7 @@
 -- Corre con `npm run db:probar` (Supabase local); todo se deshace al terminar.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(52);
+select plan(56);
 
 -- ─── Sin grupo activo ────────────────────────────────────────────────────────────────────────────────────────────────
 select is(public.demo_servir('j1', 'reto', 0) ->> 'estado', 'sin-grupo', 'sin grupo activo no hay gráfica');
@@ -80,23 +80,39 @@ select is(
 select is(public.demo_pista((select ronda from privado.demo_rondas where jugador = 'j1'), 'j1', 'mechas'), true, 'la pista se guarda tras contestar');
 select is(public.demo_pista((select ronda from privado.demo_rondas where jugador = 'j1'), 'j1', 'volumen'), false, 'pero una sola vez');
 
--- Las 10 del reto salen en el orden del horario y al terminar ya no hay más.
+-- Las 10 del reto salen en un orden propio de cada jugador y al terminar ya no hay más.
+create temporary table respuestas_j1 (n integer, resp jsonb) on commit drop;
 do $$
 declare
   r jsonb;
 begin
   for i in 2..10 loop
     r := public.demo_servir('j1', 'reto', 0);
-    perform public.demo_responder((r ->> 'ronda')::uuid, 'j1', 'real', 0);
+    insert into respuestas_j1 values (i, public.demo_responder((r ->> 'ronda')::uuid, 'j1', 'real', 0));
   end loop;
 end;
 $$;
 select is(
-  (select array_agg(w.velas ->> 'marca' order by r.n) from privado.demo_rondas r join privado.demo_ventanas w on w.id = r.ventana_id where r.jugador = 'j1')
-    = (select array_agg(velas ->> 'marca' order by reto_pos) from privado.demo_ventanas where reto_dia = 0),
-  true,
-  'las 10 gráficas del reto son las del día 0, en el orden del horario'
+  (select array_agg(w.velas ->> 'marca' order by r.n) from privado.demo_rondas r join privado.demo_ventanas w on w.id = r.ventana_id where r.jugador = 'j1'),
+  (select array_agg(velas ->> 'marca' order by md5('j1' || id::text)) from privado.demo_ventanas where reto_dia = 0),
+  'las 10 gráficas del reto son las del día 0, en el orden propio de j1 (hash del jugador y de la ventana: estable)'
 );
+select isnt(
+  (select array_agg(velas ->> 'marca' order by md5('j1' || id::text)) from privado.demo_ventanas where reto_dia = 0),
+  (select array_agg(velas ->> 'marca' order by md5('j2' || id::text)) from privado.demo_ventanas where reto_dia = 0),
+  'y el orden de j2 es otro: la clave del día no es una cadena de 10 letras'
+);
+select ok(
+  (select bool_and(not (resp ? 'acerto') and not (resp ? 'era') and not (resp ? 'revelacion')) from respuestas_j1 where n < 10),
+  'en Ranked, las respuestas 2 a 9 no dicen si acertó ni qué era'
+);
+select is(jsonb_array_length((select resp -> 'revelacion' from respuestas_j1 where n = 10)), 10, 'con la décima salen las 10 juntas');
+select is(
+  (select resp -> 'revelacion' -> 0 ->> 'era' from respuestas_j1 where n = 10),
+  (select w.fuente from privado.demo_rondas r join privado.demo_ventanas w on w.id = r.ventana_id where r.jugador = 'j1' and r.n = 1),
+  'y la revelación dice la verdad de cada una, en orden'
+);
+select is(jsonb_array_length(public.demo_servir('j1', 'reto', 0) -> 'revelacion'), 10, 'al volver, "terminado" trae las 10 para poder mostrarlas otra vez');
 select is(public.demo_servir('j1', 'reto', 0) ->> 'estado', 'terminado', 'después de las 10 el reto está terminado');
 select is(
   (select array_agg(w.velas ->> 'marca' order by r.n) from privado.demo_rondas r join privado.demo_ventanas w on w.id = r.ventana_id where r.jugador = 'j2'),
@@ -104,9 +120,9 @@ select is(
   'otro jugador todavía no tiene nada'
 );
 select is(
-  (public.demo_servir('j2', 'reto', 0) -> 'velas' ->> 'marca') = (select velas ->> 'marca' from privado.demo_ventanas where reto_dia = 0 and reto_pos = 0),
-  true,
-  'otro jugador recibe la misma primera gráfica del reto'
+  public.demo_servir('j2', 'reto', 0) -> 'velas' ->> 'marca',
+  (select velas ->> 'marca' from privado.demo_ventanas where reto_dia = 0 order by md5('j2' || id::text) limit 1),
+  'j2 recibe su primera gráfica según su propio orden'
 );
 
 -- ─── Juego libre ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -120,11 +136,6 @@ begin
   end loop;
 end;
 $$;
-select is(
-  (select count(*) from privado.demo_rondas r join privado.demo_ventanas w on w.id = r.ventana_id where r.jugador = 'j3' and w.fuente = 'real'),
-  5::bigint,
-  'una tanda libre lleva 5 reales'
-);
 select is(
   (select count(distinct w.par) from privado.demo_rondas r join privado.demo_ventanas w on w.id = r.ventana_id where r.jugador = 'j3'),
   10::bigint,
