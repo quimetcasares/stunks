@@ -158,3 +158,36 @@ test('al terminar las 10: puntaje, tarjeta sin spoilers, tabla y apodo; el marca
   expect(apodo).toBe('Joa')
   await page.screenshot({ path: 'test-results/demo-final.png', fullPage: true })
 })
+
+test('antes de contestar, la página no muestra ni guarda la verdad aunque el servidor mande de más', async ({ page }) => {
+  await page.route('**/functions/v1/demo/**', (route) => {
+    const h = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: h })
+    if (new URL(route.request().url()).pathname.endsWith('/ronda'))
+      return route.fulfill({
+        contentType: 'application/json',
+        headers: h,
+        // El "de más" es una trampa: si la página lo pintara o lo guardara, la prueba lo vería.
+        body: JSON.stringify({
+          estado: 'ok',
+          ronda: '00000000-0000-4000-8000-000000000001',
+          modo: 'reto',
+          n: 1,
+          de: 10,
+          espera_ms: 600000,
+          velas: velas(),
+          fuente: 'MARCA-DE-VERDAD',
+        }),
+      })
+    return route.fulfill({ contentType: 'application/json', headers: h, body: '{}' })
+  })
+  await page.goto('/real-or-stunks')
+  await expect(page.getByTestId('rs-grafica')).toBeVisible()
+  expect(await page.content()).not.toContain('MARCA-DE-VERDAD')
+  const guardado = await page.evaluate(
+    () => JSON.stringify({ ...localStorage }) + JSON.stringify({ ...sessionStorage }) + document.cookie,
+  )
+  expect(guardado).not.toContain('MARCA-DE-VERDAD')
+  // Solo se guarda el uuid anónimo del jugador.
+  expect(Object.keys(JSON.parse(await page.evaluate(() => JSON.stringify({ ...localStorage }))))).toEqual(['stunks.demo.jugador'])
+})
