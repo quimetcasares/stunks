@@ -53,16 +53,36 @@ begin
   exception when unique_violation then
     return 'ocupado';
   end;
-  delete from privado.demo_cache where clave = 'comun';
   return 'ok';
 end;
 $$;
 
--- Lo común a todos, solo de Ranked, con caché de 10 segundos:
+-- Respuestas de Ranked de corridas COMPLETAS (las 10 del día contestadas). Solo estas cuentan en el marcador, en "tu lugar" y en las
+-- tablas: antes de la décima, que `tu.aciertos` o el marcador cambiaran dejaba saber si la última respuesta fue acierto (A1). Con
+-- `p_jugador` solo mira a ese jugador (usa el índice por jugador) y es lo que usa `demo_agregado`.
+create function privado.demo_ranked_completo(p_jugador text default null)
+returns setof privado.demo_rondas
+language sql
+stable
+set search_path = ''
+as $$
+  select x.* from privado.demo_rondas x
+  where x.modo = 'reto' and x.respondida_en is not null and (p_jugador is null or x.jugador = p_jugador)
+    and (x.jugador, x.reto_fecha) in (
+      select y.jugador, y.reto_fecha from privado.demo_rondas y
+      where y.modo = 'reto' and y.respondida_en is not null and (p_jugador is null or y.jugador = p_jugador)
+      group by y.jugador, y.reto_fecha having count(*) = 10
+    )
+$$;
+
+-- Lo común a todos, solo de Ranked y de corridas completas, con caché de 30 segundos (todas las cuentas pesadas se hacen aquí, una
+-- vez por ventana de tiempo, y no en cada consulta de cada jugador; revisión de seguridad M1):
 --   marcador de todos (total, aciertos, jugadores, y lo de hoy),
---   tabla_hoy: quienes ya terminaron los 10 de hoy y pusieron apodo, por aciertos y, a igualdad, el menor tiempo total (existe
---              desde el primer día, sin pedir 30 respuestas),
---   tabla: histórica, desde 30 respuestas de Ranked.
+--   tabla_hoy: quienes ya terminaron los 10 de hoy y pusieron apodo, por aciertos y, a igualdad, el menor tiempo total,
+--   tabla: histórica, desde 30 respuestas de Ranked,
+--   hist_hoy: cuántas corridas de hoy sacaron 0, 1... 10 aciertos (de ahí sale "mejor que X %" sin recontar),
+--   ranking: [aciertos, total] de los que tienen apodo y 30 respuestas (de ahí sale "tu lugar" sin recontar).
+-- `hist_hoy` y `ranking` no salen de la función: son solo para calcular lo tuyo.
 create function privado.demo_comun()
 returns jsonb
 language plpgsql
@@ -75,12 +95,12 @@ declare
   datos jsonb;
 begin
   select * into c from privado.demo_cache where clave = 'comun';
-  if found and now() - c.calculado < interval '10 seconds' then
+  if found and now() - c.calculado < interval '30 seconds' then
     return c.datos;
   end if;
   perform pg_advisory_xact_lock(hashtextextended('demo:comun', 0));
   select * into c from privado.demo_cache where clave = 'comun';
-  if found and now() - c.calculado < interval '10 seconds' then
+  if found and now() - c.calculado < interval '30 seconds' then
     return c.datos;
   end if;
 
@@ -91,15 +111,14 @@ begin
     'hoy_total', count(*) filter (where reto_fecha = hoy),
     'hoy_aciertos', count(*) filter (where acerto and reto_fecha = hoy)
   ) into datos
-  from privado.demo_rondas where modo = 'reto' and respondida_en is not null;
+  from privado.demo_ranked_completo();
 
   datos := datos || jsonb_build_object('tabla', coalesce((
     select jsonb_agg(jsonb_build_object('apodo', t.apodo, 'aciertos', t.aciertos, 'total', t.total) order by t.pos)
     from (
       select a.apodo, count(*) filter (where r.acerto) as aciertos, count(*) as total,
              row_number() over (order by (count(*) filter (where r.acerto))::numeric / count(*) desc, count(*) desc, a.apodo) as pos
-      from privado.demo_rondas r join privado.demo_apodos a on a.jugador = r.jugador
-      where r.modo = 'reto' and r.respondida_en is not null
+      from privado.demo_ranked_completo() r join privado.demo_apodos a on a.jugador = r.jugador
       group by a.apodo
       having count(*) >= 30
     ) t where t.pos <= 20
@@ -113,11 +132,29 @@ begin
              row_number() over (
                order by count(*) filter (where r.acerto) desc, sum(extract(epoch from (r.respondida_en - r.servida_en))), a.apodo
              ) as pos
-      from privado.demo_rondas r join privado.demo_apodos a on a.jugador = r.jugador
-      where r.modo = 'reto' and r.reto_fecha = hoy and r.respondida_en is not null
+      from privado.demo_ranked_completo() r join privado.demo_apodos a on a.jugador = r.jugador
+      where r.reto_fecha = hoy
       group by a.apodo
-      having count(*) = 10
     ) t where t.pos <= 20
+  ), '[]'::jsonb));
+
+  datos := datos || jsonb_build_object('hist_hoy', (
+    select jsonb_agg(coalesce(h.n, 0) order by k)
+    from generate_series(0, 10) k
+    left join (
+      select q.ac, count(*) as n
+      from (select r.jugador, count(*) filter (where r.acerto) as ac from privado.demo_ranked_completo() r where r.reto_fecha = hoy group by r.jugador) q
+      group by q.ac
+    ) h on h.ac = k
+  ));
+
+  datos := datos || jsonb_build_object('ranking', coalesce((
+    select jsonb_agg(jsonb_build_array(q.ac, q.tot))
+    from (
+      select count(*) filter (where r.acerto) as ac, count(*) as tot
+      from privado.demo_ranked_completo() r join privado.demo_apodos a on a.jugador = r.jugador
+      group by r.jugador having count(*) >= 30
+    ) q
   ), '[]'::jsonb));
 
   insert into privado.demo_cache (clave, calculado, datos) values ('comun', now(), datos)
@@ -126,9 +163,9 @@ begin
 end;
 $$;
 
--- Todo lo que necesita la página en una sola llamada: lo común (solo Ranked) y lo tuyo (también solo Ranked): apodo, puntaje,
--- tu lugar en la tabla histórica y, si ya hiciste el reto de hoy, tu puntaje, a cuántos les ganaste y el número del reto.
--- Nunca cifras por ventana.
+-- Todo lo que necesita la página en una sola llamada: lo común (solo Ranked, corridas completas) y lo tuyo (también): apodo, puntaje,
+-- tu lugar en la tabla histórica y, si ya hiciste el reto de hoy, tu puntaje, a cuántos les ganaste y el número del reto. Lo tuyo
+-- se calcula con tus propias filas y con lo ya calculado en `demo_comun`; no recuenta a todos. Nunca cifras por ventana.
 create function public.demo_agregado(p_jugador text)
 returns jsonb
 language plpgsql
@@ -137,6 +174,7 @@ set search_path = ''
 as $$
 declare
   hoy date := (now() at time zone 'America/New_York')::date;
+  comun jsonb := privado.demo_comun();
   tu jsonb;
   mis_aciertos integer;
   mi_total integer;
@@ -147,33 +185,23 @@ declare
   jugaron integer;
   numero integer;
 begin
-  select count(*) filter (where acerto), count(*) into mis_aciertos, mi_total
-    from privado.demo_rondas where jugador = p_jugador and modo = 'reto' and respondida_en is not null;
+  select count(*) filter (where acerto), count(*) into mis_aciertos, mi_total from privado.demo_ranked_completo(p_jugador);
   select apodo into mi_apodo from privado.demo_apodos where jugador = p_jugador;
 
   if mi_apodo is not null and mi_total >= 30 then
-    select 1 + count(*) into mi_lugar from (
-      select r.jugador, count(*) filter (where r.acerto) as ac, count(*) as tot
-      from privado.demo_rondas r join privado.demo_apodos a on a.jugador = r.jugador
-      where r.modo = 'reto' and r.respondida_en is not null group by r.jugador having count(*) >= 30
-    ) x
-    where x.ac::numeric / x.tot > mis_aciertos::numeric / mi_total
-       or (x.ac::numeric / x.tot = mis_aciertos::numeric / mi_total and x.tot > mi_total);
+    select 1 + count(*) into mi_lugar
+    from jsonb_array_elements(comun -> 'ranking') e
+    where (e ->> 0)::numeric / (e ->> 1)::numeric > mis_aciertos::numeric / mi_total
+       or ((e ->> 0)::numeric / (e ->> 1)::numeric = mis_aciertos::numeric / mi_total and (e ->> 1)::integer > mi_total);
   end if;
 
   tu := jsonb_build_object('aciertos', mis_aciertos, 'total', mi_total, 'apodo', mi_apodo, 'lugar', mi_lugar);
 
   -- Reto de hoy: solo cuenta si ya contestó las 10.
-  select count(*) filter (where acerto) into mi_reto from privado.demo_rondas
-    where jugador = p_jugador and modo = 'reto' and reto_fecha = hoy and respondida_en is not null
-    having count(*) = 10;
+  select count(*) filter (where acerto) into mi_reto from privado.demo_ranked_completo(p_jugador) where reto_fecha = hoy having count(*) = 10;
   if mi_reto is not null then
-    with por_jugador as (
-      select jugador, count(*) filter (where acerto) as ac from privado.demo_rondas
-      where modo = 'reto' and reto_fecha = hoy and respondida_en is not null
-      group by jugador having count(*) = 10
-    )
-    select count(*) filter (where ac < mi_reto), count(*) into menores, jugaron from por_jugador;
+    select coalesce(sum(h.v::integer) filter (where h.k0 - 1 < mi_reto), 0), coalesce(sum(h.v::integer), 0) into menores, jugaron
+    from jsonb_array_elements_text(comun -> 'hist_hoy') with ordinality as h (v, k0);
     select hoy - min(inicia) + 1 into numero from privado.demo_grupos;
     tu := tu || jsonb_build_object(
       'reto', jsonb_build_object(
@@ -185,7 +213,7 @@ begin
     );
   end if;
 
-  return jsonb_build_object('comun', privado.demo_comun(), 'tu', tu);
+  return jsonb_build_object('comun', comun - 'hist_hoy' - 'ranking', 'tu', tu);
 end;
 $$;
 
@@ -213,6 +241,7 @@ as $$
   order by 1, 2;
 $$;
 
+revoke all on function privado.demo_ranked_completo(text) from public, anon, authenticated;
 revoke all on function privado.demo_comun() from public, anon, authenticated;
 revoke all on function privado.demo_por_tramo(numeric) from public, anon, authenticated;
 revoke all on function public.demo_apodo(text, text) from public, anon, authenticated;

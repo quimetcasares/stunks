@@ -2,7 +2,7 @@
 -- Corre con `npm run db:probar` (Supabase local); todo se deshace al terminar.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(31);
+select plan(36);
 
 insert into privado.demo_grupos (grupo, inicia, activo) values ('prueba', (now() at time zone 'America/New_York')::date - 2, true);
 insert into privado.demo_ventanas (id, grupo, fuente, par, origen, velas)
@@ -43,8 +43,8 @@ select is(public.demo_apodo('j3', 'Cris'), 'ok', 'j3 también');
 select is(public.demo_apodo('j4', 'Dan'), 'ok', 'quien solo jugó Free también puede poner apodo');
 
 -- Marcador: solo Ranked
-select is((public.demo_agregado('j1') -> 'comun' ->> 'total')::int, 63, 'el marcador cuenta solo las respuestas de Ranked (las 20 de Free no)');
-select is((public.demo_agregado('j1') -> 'comun' ->> 'aciertos')::int, 42, 'y sus aciertos');
+select is((public.demo_agregado('j1') -> 'comun' ->> 'total')::int, 60, 'el marcador cuenta solo Ranked de corridas completas (ni las 20 de Free ni las 3 de la corrida sin terminar de j3)');
+select is((public.demo_agregado('j1') -> 'comun' ->> 'aciertos')::int, 39, 'y sus aciertos');
 
 -- Tabla histórica (desde 30 respuestas de Ranked)
 select is(public.demo_agregado('j1') -> 'comun' -> 'tabla' -> 0 ->> 'apodo', 'Ana', 'la tabla histórica pone primero a quien más acierta');
@@ -63,6 +63,14 @@ select is(public.demo_agregado('j1') -> 'comun' -> 'tabla_hoy' -> 1 ->> 'apodo',
 select is((public.demo_agregado('j1') -> 'tu' -> 'reto' ->> 'aciertos')::int, 10, 'tu puntaje del reto de hoy');
 select is((public.demo_agregado('j1') -> 'tu' -> 'reto' ->> 'numero')::int, 3, 'el número del reto cuenta desde el primer día del primer grupo');
 select is((public.demo_agregado('j1') -> 'tu' -> 'reto' ->> 'mejor_que')::int, 0, 'con otro igual de bien no le ganas a nadie');
+
+-- Corridas sin terminar: lo tuyo y el marcador no cambian con respuestas sueltas (si no, se sabría si la última fue acierto).
+select is((public.demo_agregado('j3') -> 'tu' ->> 'total')::int, 0, 'las 3 respuestas de la corrida sin terminar de j3 no cuentan en lo suyo');
+select is((public.demo_agregado('j3') -> 'tu' ->> 'aciertos')::int, 0, 'ni sus aciertos');
+select ok(not ((public.demo_agregado('j1') -> 'comun') ? 'hist_hoy') and not ((public.demo_agregado('j1') -> 'comun') ? 'ranking'), 'los datos internos del caché no salen');
+select is((public.demo_agregado('j2') -> 'tu' -> 'reto' ->> 'jugaron')::int, 2, 'a cuántos les ganas se saca del histograma ya calculado (2 corridas completas hoy)');
+-- /apodo ya no vacía la caché: un script no puede forzar el recálculo completo.
+select is((select count(*) from privado.demo_cache where clave = 'comun'), 1::bigint, 'poner apodo no borra la caché común');
 
 select ok(
   not (public.demo_agregado('j1') ?| array['fuente', 'ventana_id', 'origen', 'par'])
