@@ -2,7 +2,7 @@
 -- Corre con `npm run db:probar` (Supabase local); todo se deshace al terminar.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(25);
 
 insert into privado.demo_grupos (grupo, inicia, activo) values ('prueba', (now() at time zone 'America/New_York')::date - 2, true);
 insert into privado.demo_ventanas (id, grupo, fuente, par, origen, velas)
@@ -48,6 +48,14 @@ select ok(
   not (public.demo_agregado('j1') ?| array['fuente', 'ventana_id', 'origen', 'par']) and not ((public.demo_agregado('j1') -> 'comun') ?| array['fuente', 'por_ventana']),
   'el agregado no trae cifras por ventana ni la verdad'
 );
+
+-- Resultados por tramo de tiempo (para publicar los dos números sin cambiar lo que cuenta la página).
+update privado.demo_rondas set servida_en = respondida_en - interval '1 second' where jugador = 'j3';
+select is((select respuestas from privado.demo_por_tramo(3) where tramo = 'menos de 3 s'), 3::bigint, 'las 3 respuestas de 1 s caen en menos de 3 s');
+select is((select respuestas from privado.demo_por_tramo(3) where tramo = '3 s o más'), 60::bigint, 'y las otras 60 en 3 s o más');
+select is((select respuestas from privado.demo_por_tramo(3) where tramo = 'todas'), 63::bigint, 'todas suman 63');
+select throws_ok($$set local role authenticated; select * from privado.demo_por_tramo(3)$$, '42501', null, 'la API no la ejecuta');
+reset role;
 
 -- Mínimo para que cuente en el marcador (parámetro de Joaquín; por omisión 0 = cuentan todas).
 select is((select valor from privado.demo_config where clave = 'min_cuenta_ms'), 0, 'por omisión cuentan todas las respuestas');

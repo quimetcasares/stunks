@@ -179,3 +179,28 @@ revoke all on function public.demo_apodo(text, text) from public, anon, authenti
 revoke all on function public.demo_agregado(text) from public, anon, authenticated;
 grant execute on function public.demo_apodo(text, text) to service_role;
 grant execute on function public.demo_agregado(text) to service_role;
+
+-- Para publicar los resultados por tramo de tiempo (por ejemplo menos de 3 s y 3 s o más) sin cambiar lo que cuenta la página.
+-- Cada respuesta ya guarda cuánto tardó (servida_en y respondida_en). Solo se consulta con SQL del proyecto (no la ejecuta
+-- ningún rol de la API): select * from privado.demo_por_tramo(3);
+create function privado.demo_por_tramo(p_segundos numeric default 3)
+returns table (tramo text, respuestas bigint, aciertos bigint, porcentaje numeric, jugadores bigint, mediana_segundos numeric)
+language sql
+stable
+set search_path = ''
+as $$
+  select case when t.seg < p_segundos then format('menos de %s s', p_segundos) else format('%s s o más', p_segundos) end,
+         count(*), count(*) filter (where t.acerto), round(100.0 * count(*) filter (where t.acerto) / count(*), 1),
+         count(distinct t.jugador), round((percentile_cont(0.5) within group (order by t.seg))::numeric, 1)
+  from (
+    select jugador, acerto, extract(epoch from (respondida_en - servida_en)) as seg
+    from privado.demo_rondas where respondida_en is not null
+  ) t
+  group by 1
+  union all
+  select 'todas', count(*), count(*) filter (where acerto), round(100.0 * count(*) filter (where acerto) / nullif(count(*), 0), 1),
+         count(distinct jugador), round((percentile_cont(0.5) within group (order by extract(epoch from (respondida_en - servida_en))))::numeric, 1)
+  from privado.demo_rondas where respondida_en is not null
+  order by 1;
+$$;
+revoke all on function privado.demo_por_tramo(numeric) from public, anon, authenticated;
